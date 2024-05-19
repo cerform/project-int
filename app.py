@@ -1,12 +1,57 @@
-import os
-import mimetypes
 from flask import Flask, render_template, request, send_file, render_template_string
 from pptx import Presentation
-import fitz  # PyMuPDF
 from docx import Document
+import os
+import mimetypes
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key_here'
+
+
+def extract_text_from_pdf(file_path):
+    # Implement text extraction from PDF (not provided in this code snippet)
+    return ""
+
+
+def extract_text_from_docx(file_path):
+    text = ""
+    try:
+        document = Document(file_path)
+        for paragraph in document.paragraphs:
+            text += paragraph.text + "\n"
+    except Exception as e:
+        print(f"Error extracting text from DOCX: {e}")
+    return text
+
+
+def extract_images_from_pptx(file_path):
+    images = []
+    presentation = Presentation(file_path)
+    for i, slide in enumerate(presentation.slides):
+        image_file = f"slide_{i}.png"
+        slide_image = os.path.join(app.root_path, 'templates', 'uploads', 'pptx_images', image_file)
+        slide.save(slide_image)  # Save slide as image
+        images.append(slide_image)
+    return images
+
+
+def extract_text_from_pptx(file_path):
+    text = ""
+    try:
+        presentation = Presentation(file_path)
+        for slide in presentation.slides:
+            for shape in slide.shapes:
+                if hasattr(shape, "text"):
+                    text += shape.text + "\n"
+    except Exception as e:
+        print(f"Error extracting text from PPTX: {e}")
+    return text
+
+
+def search_in_text(text, query):
+    if text is None:
+        return False
+    return query.lower() in text.lower()
 
 
 def get_documents():
@@ -25,42 +70,30 @@ def get_documents():
                 })
     return documents
 
+
 @app.route('/')
 def index():
-    documents = get_documents()
-    return render_template('index.html', documents=documents)
+    categories = [...]  # Your categories list
+    files = [...]  # Your files dictionary
+    return render_template('index.html', categories=categories, files=files)
+
 
 @app.route('/search', methods=['POST'])
 def search():
     query = request.form['query']
     results = []
     for document in get_documents():
+        text = ""
         if document['file_path'].endswith('.pdf'):
             text = extract_text_from_pdf(document['file_path'])
         elif document['file_path'].endswith('.docx'):
             text = extract_text_from_docx(document['file_path'])
-        else:
-            continue
+        elif document['file_path'].endswith('.pptx'):
+            text = extract_text_from_pptx(document['file_path'])
+
         if search_in_text(text, query):
             results.append(document)
     return render_template('search_results.html', results=results, query=query)
-
-def extract_text_from_pdf(file_path):
-    text = ""
-    document = fitz.open(file_path)
-    for page in document:
-        text += page.get_text()
-    return text
-
-def extract_text_from_docx(file_path):
-    text = ""
-    document = Document(file_path)
-    for paragraph in document.paragraphs:
-        text += paragraph.text + "\n"
-    return text
-
-def search_in_text(text, query):
-    return query.lower() in text.lower()
 
 
 @app.route('/open/<path:file_path>', methods=['GET'])
@@ -75,18 +108,28 @@ def open_or_download_file(file_path):
 
         # Check if the file is a text-based file
         if mime_type and mime_type.startswith('text'):
-            # Read the text content of the file
-            with open(absolute_file_path, 'r') as f:
-                file_content = f.read()
+            # Extract text content from supported text-based files (e.g., DOCX, PPTX)
+            if mime_type == 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
+                text = extract_text_from_docx(absolute_file_path)
+                return render_template_string('<pre>{{ content }}</pre>', content=text)
+            elif mime_type == 'application/vnd.openxmlformats-officedocument.presentationml.presentation':
+                images = extract_text_from_pptx(absolute_file_path)
+                return render_template('pptx_preview.html', images=images)
+            else:
+                # For other text-based files, read the content
+                with open(absolute_file_path, 'r') as f:
+                    text = f.read()
 
-            # Return the file content as HTML
-            return render_template_string('<pre>{{ content }}</pre>', content=file_content)
+            # Return the text content as HTML for preview
+            return render_template_string('<pre>{{ content }}</pre>', content=text)
+
         else:
-            # Send the file for in-browser viewing
-            return send_file(absolute_file_path, mimetype=mime_type)
+            # Send the file for download
+            return send_file(absolute_file_path, mimetype=mime_type, as_attachment=True)
     else:
         # Return a 404 error if the file does not exist
         return "File not found", 404
+
 
 if __name__ == '__main__':
     app.run(debug=True)

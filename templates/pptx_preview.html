@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PPTX Preview</title>
+    <style>
+        .slide-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .slide-image {
+            max-width: 100%;
+            height: auto;
+            border: 1px solid #ddd;
+            padding: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>PPTX Preview</h1>
+    <div class="slide-container">
+        {% for image in images %}
+            <img src="{{ image }}" class="slide-image" alt="Slide">
+        {% endfor %}
+    </div>
+</body>
+</html>
