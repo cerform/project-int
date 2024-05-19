@@ -40,3 +40,57 @@ h1 {
 .notes-list a {
     margin-right: 10px;
 }
+
+/* Flying effect */
+.flying-menu {
+    position: relative;
+}
+
+.flying-balloon {
+    position: relative;
+    display: inline-block;
+    margin: 10px;
+}
+
+.flying-balloon ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: none;
+    position: absolute;
+    top: 30px;
+    left: 0;
+    background: #fff;
+    padding: 10px;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    z-index: 1;
+    animation: fly-in 0.5s ease-out;
+}
+
+.flying-balloon:hover ul {
+    display: block;
+    animation: slide-down 0.3s ease-out;
+}
+
+@keyframes fly-in {
+    from {
+        opacity: 0;
+        transform: translateY(-50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slide-down {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

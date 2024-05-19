@@ -1,20 +1,15 @@
-<!-- search_results.html -->
-
 {% extends "layout.html" %}
 
 {% block content %}
-<h1>Search Results</h1>
-{% if results %}
+    <h1>Search Results</h1>
+    <p>Query: {{ query }}</p>
     <ul>
-    {% for result in results %}
-        <li>
-            <h3>{{ result.file_name }}</h3>
-            <p>Category: {{ result.category }}</p>
-            <p><a href="{{ url_for('open_file', file_path=result.file_path) }}" target="_blank">Open File</a></p>
-        </li>
-    {% endfor %}
+        {% for result in results %}
+            <li>
+                {{ result.file_name }} -
+                <a href="{{ url_for('download_file', file_path=result.file_path) }}" target="_blank">Download File</a>
+                <a href="{{ url_for('open_file', file_path=result.file_path) }}" class="btn btn-primary" target="_blank">Open</a>
+            </li>
+        {% endfor %}
     </ul>
-{% else %}
-    <p>No results found for "{{ query }}".</p>
-{% endif %}
 {% endblock %}

@@ -11,10 +11,56 @@
     </form>
     <hr>
     <h2>Available Documents</h2>
-    <ul>
+    <div class="flying-menu">
+        {% set current_category = '' %}
         {% for document in documents %}
-            <li>{{ document.category }} - {{ document.file_name }}</li>
+            {% if document.category != current_category %}
+                <div class="flying-balloon">
+                    <h3>{{ document.category }}</h3>
+                    <ul>
+                        {% set current_category = document.category %}
+                        {% for document in documents %}
+                            {% if document.category == current_category %}
+                                <li>{{ document.file_name }}</li>
+                            {% endif %}
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
         {% endfor %}
-    </ul>
+    </div>
 </div>
+
+<style>
+    .flying-menu {
+        position: relative;
+        display: flex;
+        justify-content: space-between;
+    }
+
+    .flying-balloon {
+        position: relative;
+        display: inline-block;
+        margin: 10px;
+    }
+
+    .flying-balloon ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: none;
+        position: absolute;
+        top: 30px;
+        left: 0;
+        background: #fff;
+        padding: 10px;
+        border-radius: 5px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        z-index: 1;
+    }
+
+    .flying-balloon:hover ul {
+        display: block;
+    }
+</style>
 {% endblock %}
