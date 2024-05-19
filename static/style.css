@@ -1,0 +1,14 @@
+.categories {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.category {
+    flex: 0 0 auto;
+    margin-right: 10px; /* Adjust as needed */
+}
+
+.category a {
+    text-decoration: none;
+    color: black; /* Adjust color as needed */
+}

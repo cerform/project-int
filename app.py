@@ -1,6 +1,6 @@
 import os
 import mimetypes
-from flask import Flask, render_template, request, redirect, url_for, flash, send_file, render_template_string
+from flask import Flask, render_template, request, redirect, url_for, flash, send_file, render_template_string, Response, send_file
 from werkzeug.utils import secure_filename
 import mammoth
 from pptx import Presentation
@@ -76,21 +76,34 @@ def open_file(file_path):
     if os.path.exists(absolute_file_path):
         mime_type, _ = mimetypes.guess_type(absolute_file_path)
         if mime_type and mime_type.startswith('text'):
-            if mime_type == 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
-                text = extract_text_from_docx(absolute_file_path)
-                return render_template_string('<pre>{{ content }}</pre>', content=text)
-            elif mime_type == 'application/vnd.openxmlformats-officedocument.presentationml.presentation':
-                text = extract_text_from_pptx(absolute_file_path)
-                return render_template_string('<pre>{{ content }}</pre>', content=text)
-            else:
-                with open(absolute_file_path, 'r') as f:
-                    text = f.read()
-                return render_template_string('<pre>{{ content }}</pre>', content=text)
+            # Specify encoding when opening the file
+            with open(absolute_file_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            return render_template('docx_template.html', paragraphs=content.split('\n'))
         else:
-            return send_file(absolute_file_path, mimetype=mime_type, as_attachment=True)
+            # Serve file inline
+            return Response(open(absolute_file_path, 'rb'), mimetype=mime_type)
     else:
         return "File not found", 404
 
+    from flask import send_file
+
+    @app.route('/open/<path:file_path>', methods=['GET'])
+    def open_file(file_path):
+        absolute_file_path = os.path.abspath(os.path.join(app.config['UPLOAD_FOLDER'], file_path))
+
+        if os.path.exists(absolute_file_path):
+            mime_type, _ = mimetypes.guess_type(absolute_file_path)
+            if mime_type and mime_type.startswith('text'):
+                # Specify encoding when opening the file
+                with open(absolute_file_path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                return render_template('docx_template.html', paragraphs=content.split('\n'))
+            else:
+                # Serve file inline
+                return send_file(absolute_file_path, mimetype=mime_type, as_attachment=True)
+        else:
+            return "File not found", 404
 @app.route('/upload', methods=['POST'])
 def upload():
     if 'file' not in request.files:
