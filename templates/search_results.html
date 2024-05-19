@@ -1,18 +1,20 @@
+<!-- search_results.html -->
 {% extends "layout.html" %}
 
 {% block content %}
-    <h1>Search Results</h1>
-    <p>Query: {{ query }}</p>
-    <ul>
-        {% for result in results %}
-            <li>
-                {{ result.file_name }} -
-                <a href="{{ url_for('open_or_download_file', file_path=result.file_path) }}" target="_blank">Download File</a>
-                <a href="{{ url_for('open_or_download_file', file_path=result.file_path) }}" class="btn btn-primary" target="_blank">Open</a>
-                <div>
-                    <iframe src="{{ url_for('open_or_download_file', file_path=result.file_path) }}" width="100%" height="800px"></iframe>
-                </div>
-            </li>
-        {% endfor %}
-    </ul>
+<div class="container">
+    <h1>Search Results for "{{ query }}"</h1>
+    {% if results %}
+        <ul>
+            {% for file_path, content in results.items() %}
+                <li>
+                    <a href="{{ url_for('open_file', file_path=file_path) }}" target="_blank">{{ file_path }}</a>
+                    <p>{{ content[:300] }}...</p> <!-- Display the first 300 characters as a preview -->
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No results found.</p>
+    {% endif %}
+</div>
 {% endblock %}
