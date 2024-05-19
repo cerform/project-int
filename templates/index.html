@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <a href="{{ url_for('add_note') }}" class="btn">Add Note</a>
+    <ul class="notes-list">
+        {% for note in notes %}
+            <li>
+                <a href="{{ url_for('note_detail', note_id=loop.index0) }}">{{ note.title }}</a>
+                <a href="{{ url_for('edit_note', note_id=loop.index0) }}" class="btn">Edit</a>
+                <a href="{{ url_for('delete_note', note_id=loop.index0) }}" class="btn">Delete</a>
+            </li>
+        {% endfor %}
+    </ul>
+{% endblock %}
