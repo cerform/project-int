@@ -1,17 +1,20 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Search Results</title>
-</head>
-<body>
-    <h1>Search Results for "{{ query }}"</h1>
+<!-- search_results.html -->
+
+{% extends "layout.html" %}
+
+{% block content %}
+<h1>Search Results</h1>
+{% if results %}
     <ul>
-        {% for result in results %}
-            <li>{{ result }}</li>
-        {% endfor %}
+    {% for result in results %}
+        <li>
+            <h3>{{ result.file_name }}</h3>
+            <p>Category: {{ result.category }}</p>
+            <p><a href="{{ url_for('open_file', file_path=result.file_path) }}" target="_blank">Open File</a></p>
+        </li>
+    {% endfor %}
     </ul>
-    <a href="{{ url_for('upload_file') }}">Upload another file</a>
-</body>
-</html>
+{% else %}
+    <p>No results found for "{{ query }}".</p>
+{% endif %}
+{% endblock %}

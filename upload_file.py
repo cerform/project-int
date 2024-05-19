@@ -13,7 +13,7 @@ def get_documents():
     for root, dirs, files in os.walk(uploads_dir):
         for file_name in files:
             file_path = os.path.join(root, file_name)
-            if file_path.endswith('.pdf') or file_path.endswith('.docx') or file_path.endswith('.pptx'):
+            if file_path.endswith('.pdf') or file_path.endswith('.docx'):
                 # Extract category from the folder name containing the file
                 category = os.path.basename(os.path.dirname(file_path))
                 documents.append({
@@ -22,6 +22,14 @@ def get_documents():
                     'file_path': file_path
                 })
     return documents
+
+def save_uploaded_file(file, category):
+    uploads_dir = os.path.join(app.root_path, 'templates', 'uploads', category, 'files')
+    os.makedirs(uploads_dir, exist_ok=True)
+    filename = secure_filename(file.filename)
+    file_path = os.path.join(uploads_dir, filename)
+    file.save(file_path)
+    return file_path
 
 @app.route('/')
 def index():
@@ -43,6 +51,27 @@ def search():
             results.append(document)
     return render_template('search_results.html', results=results, query=query)
 
+@app.route('/upload', methods=['GET', 'POST'])
+def upload_file():
+    if request.method == 'POST':
+        file = request.files['file']
+        category = request.form['category']
+        new_category = request.form['new_category']
+
+        # If a new category is provided, create the category directory
+        if new_category:
+            category = new_category
+            uploads_dir = os.path.join(app.root_path, 'templates', 'uploads', category)
+            os.makedirs(uploads_dir, exist_ok=True)
+
+        # Save the uploaded file
+        if file and category:
+            file_path = save_uploaded_file(file, category)
+            flash('File uploaded successfully', 'success')
+            return redirect(url_for('index'))
+
+    return render_template('upload.html')
+
 def extract_text_from_pdf(file_path):
     text = ""
     document = fitz.open(file_path)
@@ -59,15 +88,6 @@ def extract_text_from_docx(file_path):
 
 def search_in_text(text, query):
     return query.lower() in text.lower()
-@app.route('/open/<path:file_path>', methods=['GET'])
-def open_file(file_path):
-    # Here, you can implement the logic to open the file
-    # For example, you can use the file_path to read the file content
-    # and return it to the user or perform any other actions you need.
-    # Make sure to handle any potential errors appropriately.
-
-    # For now, let's just return a simple message indicating that the file is opened.
-    return f"The file at path {file_path} is opened."
 
 if __name__ == '__main__':
     app.run(debug=True)
