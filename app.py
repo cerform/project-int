@@ -8,11 +8,12 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key_here'
 
 
+# Extract text from PDF function placeholder (implement as needed)
 def extract_text_from_pdf(file_path):
-    # Implement text extraction from PDF (not provided in this code snippet)
     return ""
 
 
+# Extract text from DOCX files
 def extract_text_from_docx(file_path):
     text = ""
     try:
@@ -24,6 +25,7 @@ def extract_text_from_docx(file_path):
     return text
 
 
+# Extract images from PPTX files (optional functionality)
 def extract_images_from_pptx(file_path):
     images = []
     presentation = Presentation(file_path)
@@ -35,6 +37,7 @@ def extract_images_from_pptx(file_path):
     return images
 
 
+# Extract text from PPTX files
 def extract_text_from_pptx(file_path):
     text = ""
     try:
@@ -48,12 +51,14 @@ def extract_text_from_pptx(file_path):
     return text
 
 
+# Search text in document
 def search_in_text(text, query):
     if text is None:
         return False
     return query.lower() in text.lower()
 
 
+# Get document metadata
 def get_documents():
     documents = []
     uploads_dir = os.path.join(app.root_path, 'templates', 'uploads')
@@ -61,7 +66,6 @@ def get_documents():
         for file_name in files:
             file_path = os.path.join(root, file_name)
             if file_path.endswith('.pdf') or file_path.endswith('.docx') or file_path.endswith('.pptx'):
-                # Extract category from the folder name containing the file
                 category = os.path.basename(os.path.dirname(file_path))
                 documents.append({
                     'category': category,
@@ -98,17 +102,12 @@ def search():
 
 @app.route('/open/<path:file_path>', methods=['GET'])
 def open_or_download_file(file_path):
-    # Get the absolute path of the file
     absolute_file_path = os.path.abspath(file_path)
 
-    # Check if the file exists
     if os.path.exists(absolute_file_path):
-        # Determine the MIME type of the file
         mime_type, _ = mimetypes.guess_type(absolute_file_path)
 
-        # Check if the file is a text-based file
         if mime_type and mime_type.startswith('text'):
-            # Extract text content from supported text-based files (e.g., DOCX, PPTX)
             if mime_type == 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
                 text = extract_text_from_docx(absolute_file_path)
                 return render_template_string('<pre>{{ content }}</pre>', content=text)
@@ -116,18 +115,12 @@ def open_or_download_file(file_path):
                 images = extract_text_from_pptx(absolute_file_path)
                 return render_template('pptx_preview.html', images=images)
             else:
-                # For other text-based files, read the content
                 with open(absolute_file_path, 'r') as f:
                     text = f.read()
-
-            # Return the text content as HTML for preview
             return render_template_string('<pre>{{ content }}</pre>', content=text)
-
         else:
-            # Send the file for download
             return send_file(absolute_file_path, mimetype=mime_type, as_attachment=True)
     else:
-        # Return a 404 error if the file does not exist
         return "File not found", 404
 
 
