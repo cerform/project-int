@@ -1,3 +1,4 @@
+<!-- index.html -->
 {% extends "layout.html" %}
 
 {% block content %}
@@ -11,56 +12,22 @@
     </form>
     <hr>
     <h2>Available Documents</h2>
-    <div class="flying-menu">
-        {% set current_category = '' %}
-        {% for document in documents %}
-            {% if document.category != current_category %}
-                <div class="flying-balloon">
-                    <h3>{{ document.category }}</h3>
-                    <ul>
-                        {% set current_category = document.category %}
-                        {% for document in documents %}
-                            {% if document.category == current_category %}
-                                <li>{{ document.file_name }}</li>
-                            {% endif %}
-                        {% endfor %}
-                    </ul>
-                </div>
-            {% endif %}
-        {% endfor %}
+    <div class="site-navigation">
+        <ul class="main-menu">
+            <li><a href="#">Documents</a>
+                <ul class="sub-menu">
+                    {% for category in categories %}
+                        <li><a href="#">{{ category }}</a>
+                            <ul class="sub-sub-menu">
+                                {% for file in files[category] %}
+                                    <li><a href="{{ url_for('open_file', file_path=category + '/' + file) }}">{{ file }}</a></li>
+                                {% endfor %}
+                            </ul>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </li>
+        </ul>
     </div>
 </div>
-
-<style>
-    .flying-menu {
-        position: relative;
-        display: flex;
-        justify-content: space-between;
-    }
-
-    .flying-balloon {
-        position: relative;
-        display: inline-block;
-        margin: 10px;
-    }
-
-    .flying-balloon ul {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-        display: none;
-        position: absolute;
-        top: 30px;
-        left: 0;
-        background: #fff;
-        padding: 10px;
-        border-radius: 5px;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-        z-index: 1;
-    }
-
-    .flying-balloon:hover ul {
-        display: block;
-    }
-</style>
 {% endblock %}

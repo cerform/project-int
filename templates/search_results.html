@@ -7,8 +7,11 @@
         {% for result in results %}
             <li>
                 {{ result.file_name }} -
-                <a href="{{ url_for('download_file', file_path=result.file_path) }}" target="_blank">Download File</a>
-                <a href="{{ url_for('open_file', file_path=result.file_path) }}" class="btn btn-primary" target="_blank">Open</a>
+                <a href="{{ url_for('open_or_download_file', file_path=result.file_path) }}" target="_blank">Download File</a>
+                <a href="{{ url_for('open_or_download_file', file_path=result.file_path) }}" class="btn btn-primary" target="_blank">Open</a>
+                <div>
+                    <iframe src="{{ url_for('open_or_download_file', file_path=result.file_path) }}" width="100%" height="800px"></iframe>
+                </div>
             </li>
         {% endfor %}
     </ul>

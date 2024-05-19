@@ -64,24 +64,7 @@ def search_in_text(text, query):
 
 
 @app.route('/open/<path:file_path>', methods=['GET'])
-def download_file(file_path):  # Changed the function name to download_file
-    # Get the absolute path of the file
-    absolute_file_path = os.path.abspath(file_path)
-
-    # Check if the file exists
-    if os.path.exists(absolute_file_path):
-        # Determine the MIME type of the file
-        mime_type, _ = mimetypes.guess_type(absolute_file_path)
-
-        # Send the file as a response
-        return send_file(absolute_file_path, mimetype=mime_type, as_attachment=True)
-    else:
-        # Return a 404 error if the file does not exist
-        return "File not found", 404
-
-
-@app.route('/open/<path:file_path>', methods=['GET'])
-def open_file(file_path):
+def open_or_download_file(file_path):
     # Get the absolute path of the file
     absolute_file_path = os.path.abspath(file_path)
 
@@ -99,8 +82,8 @@ def open_file(file_path):
             # Return the file content as HTML
             return render_template_string('<pre>{{ content }}</pre>', content=file_content)
         else:
-            # For other file types, return a message indicating that the file cannot be displayed inline
-            return "This file type cannot be displayed inline in the browser."
+            # Send the file for in-browser viewing
+            return send_file(absolute_file_path, mimetype=mime_type)
     else:
         # Return a 404 error if the file does not exist
         return "File not found", 404
