@@ -5,6 +5,45 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document Search Engine</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        /* General styles */
+        body {
+            color: yellow;
+            background-color: black;
+        }
+        h2 {
+            color: red;
+        }
+        .alert {
+            background-color: red;
+            color: black;
+        }
+        .badge-primary {
+            background-color: black;
+            border-color: green;
+        }
+        /* Category display styles */
+        .categories {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px; /* Space between categories */
+        }
+        .category-btn {
+            background-color: #6c757d;
+            border: none;
+            color: white;
+            padding: 10px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 5px;
+            cursor: pointer;
+        }
+        .category-btn:hover {
+            background-color: #5a6268;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -17,10 +56,10 @@
                 </div>
             {% endif %}
         {% endwith %}
-        {% block content %}{% endblock %}
+
+        {% block content %}
+        {% endblock %}
     </div>
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-</body>
-</html>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></
