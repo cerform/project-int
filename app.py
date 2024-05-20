@@ -1,21 +1,32 @@
 import os
 import mimetypes
-from flask import Flask, render_template, request, redirect, url_for, flash, send_file, render_template_string, Response, send_file
+from flask import Flask, render_template, request, redirect, url_for, flash, send_file
 from werkzeug.utils import secure_filename
 import mammoth
 from pptx import Presentation
+import fitz  # PyMuPDF
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'templates/uploads'
 app.secret_key = 'supersecretkey'
 
-# Ensure these are set according to your needs
 app.config['ALLOWED_EXTENSIONS'] = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'docx', 'pptx'}
 
 file_index = {}
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
+
+def extract_text_from_txt(path):
+    with open(path, 'r', encoding='utf-8') as file:
+        return file.read()
+
+def extract_text_from_pdf(path):
+    doc = fitz.open(path)
+    text = []
+    for page in doc:
+        text.append(page.get_text())
+    return "\n".join(text)
 
 def extract_text_from_docx(path):
     with open(path, 'rb') as file:
@@ -32,10 +43,15 @@ def extract_text_from_pptx(path):
     return "\n".join(text)
 
 def index_files(upload_folder):
+    file_index.clear()
     for root, dirs, files in os.walk(upload_folder):
         for file in files:
             file_path = os.path.join(root, file)
-            if file.endswith('.docx'):
+            if file.endswith('.txt'):
+                content = extract_text_from_txt(file_path)
+            elif file.endswith('.pdf'):
+                content = extract_text_from_pdf(file_path)
+            elif file.endswith('.docx'):
                 content = extract_text_from_docx(file_path)
             elif file.endswith('.pptx'):
                 content = extract_text_from_pptx(file_path)
@@ -43,6 +59,8 @@ def index_files(upload_folder):
                 continue
             relative_path = os.path.relpath(file_path, upload_folder)
             file_index[relative_path] = content
+            # Debugging: Log indexed file path
+            print(f'Indexed file: {relative_path}')
 
 def search_files(query):
     results = {}
@@ -61,7 +79,7 @@ def index():
             category = os.path.basename(root)
             if category in categories:
                 categories[category].append(f)
-    return render_template('index.html', categories=categories, files=categories)
+    return render_template('index.html', categories=categories)
 
 @app.route('/search', methods=['POST'])
 def search():
@@ -73,37 +91,20 @@ def search():
 def open_file(file_path):
     absolute_file_path = os.path.abspath(os.path.join(app.config['UPLOAD_FOLDER'], file_path))
 
+    # Debugging: Log the file path being accessed
+    print(f'Trying to open file: {absolute_file_path}')
+
     if os.path.exists(absolute_file_path):
         mime_type, _ = mimetypes.guess_type(absolute_file_path)
         if mime_type and mime_type.startswith('text'):
-            # Specify encoding when opening the file
             with open(absolute_file_path, 'r', encoding='utf-8') as f:
                 content = f.read()
             return render_template('docx_template.html', paragraphs=content.split('\n'))
         else:
-            # Serve file inline
-            return Response(open(absolute_file_path, 'rb'), mimetype=mime_type)
+            return send_file(absolute_file_path, mimetype=mime_type, as_attachment=True)
     else:
         return "File not found", 404
 
-    from flask import send_file
-
-    @app.route('/open/<path:file_path>', methods=['GET'])
-    def open_file(file_path):
-        absolute_file_path = os.path.abspath(os.path.join(app.config['UPLOAD_FOLDER'], file_path))
-
-        if os.path.exists(absolute_file_path):
-            mime_type, _ = mimetypes.guess_type(absolute_file_path)
-            if mime_type and mime_type.startswith('text'):
-                # Specify encoding when opening the file
-                with open(absolute_file_path, 'r', encoding='utf-8') as f:
-                    content = f.read()
-                return render_template('docx_template.html', paragraphs=content.split('\n'))
-            else:
-                # Serve file inline
-                return send_file(absolute_file_path, mimetype=mime_type, as_attachment=True)
-        else:
-            return "File not found", 404
 @app.route('/upload', methods=['POST'])
 def upload():
     if 'file' not in request.files:
