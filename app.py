@@ -25,16 +25,11 @@ app.config['ALLOWED_EXTENSIONS'] = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', '
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
 
-def extract_text_and_images_from_pptx(file_path, images_dir):
+def extract_text_and_images_from_pptx(file_path, uploads_dir):
     from pptx.enum.shapes import MSO_SHAPE_TYPE
 
     prs = Presentation(file_path)
     slides_content = []
-
-    # Ensure the images directory exists
-    if not os.path.exists(images_dir):
-        os.makedirs(images_dir)
-        print(f"Created images directory at {images_dir}")
 
     for slide_index, slide in enumerate(prs.slides):
         slide_content = []
@@ -45,7 +40,10 @@ def extract_text_and_images_from_pptx(file_path, images_dir):
 
             if shape.shape_type == MSO_SHAPE_TYPE.PICTURE:  # Placeholder for Picture
                 image = shape.image
-                image_path = os.path.join(images_dir, f"slide_{slide_index + 1}_image_{shape_index + 1}.png")
+                category = os.path.basename(os.path.dirname(file_path))
+                category_dir = os.path.join(uploads_dir, secure_filename(category))
+                create_directory(category_dir)  # Ensure the category directory exists
+                image_path = os.path.join(category_dir, f"slide_{slide_index + 1}_image_{shape_index + 1}.png")
                 with open(image_path, 'wb') as img_file:
                     img_file.write(image.blob)
                 relative_image_path = os.path.relpath(image_path, 'static')
@@ -55,6 +53,14 @@ def extract_text_and_images_from_pptx(file_path, images_dir):
         slides_content.append({'slide_index': slide_index, 'content': slide_content})
 
     return slides_content
+
+
+def create_directory(directory):
+    # Create the directory if it doesn't exist
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+        print(f"Created directory: {directory}")
+
 
 def extract_text_from_txt(path):
     with open(path, 'r', encoding='utf-8') as file:
@@ -149,7 +155,9 @@ def open_file(file_path):
     # Replace backslashes with forward slashes in the file path
     file_path = file_path.replace("\\", "/")
 
-    absolute_file_path = os.path.abspath(os.path.join(app.config['UPLOAD_FOLDER'], file_path))
+    # Update this line to replace backslashes with forward slashes in the file path
+    absolute_file_path = os.path.abspath(os.path.join(app.config['UPLOAD_FOLDER'], file_path.replace('\\', '/')))
+
     print(f"Opening file: {absolute_file_path}")
 
     if os.path.exists(absolute_file_path):
