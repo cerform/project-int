@@ -5,26 +5,42 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PPTX Preview</title>
     <style>
-        .slide-container {
+        .slides-container {
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
             gap: 20px;
         }
-
-        .slide-image {
+        .slide {
+            border: 1px solid #ddd;
+            padding: 10px;
+            max-width: 400px;
+        }
+        .slide img {
             max-width: 100%;
             height: auto;
             border: 1px solid #ddd;
             padding: 5px;
         }
+        .slide p {
+            margin: 5px 0;
+        }
     </style>
 </head>
 <body>
     <h1>PPTX Preview</h1>
-    <div class="slide-container">
-        {% for image in images %}
-            <img src="{{ image }}" class="slide-image" alt="Slide">
+    <div class="slides-container">
+        {% for slide in slides_content %}
+            <div class="slide">
+                <h2>Slide {{ slide.slide_index + 1 }}</h2>
+                {% for content in slide.content %}
+                    {% if content.type == 'text' %}
+                        <p>{{ content.content }}</p>
+                    {% elif content.type == 'image' %}
+                        <img src="{{ url_for('static', filename=content.content) }}" alt="Slide image">
+                    {% endif %}
+                {% endfor %}
+            </div>
         {% endfor %}
     </div>
 </body>
