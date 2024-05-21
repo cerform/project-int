@@ -14,12 +14,18 @@ pre {
     white-space: pre-wrap; /* Allows long lines to break and wrap */
 }
 
+#console-container {
+    position: fixed;
+    bottom: 20px; /* Adjust as needed */
+    right: 20px; /* Adjust as needed */
+    z-index: 1000; /* Ensure console is above other content */
+}
+
 #console {
     border: 1px solid #ccc;
     padding: 10px;
     border-radius: 5px;
-    width: 50%;
-    margin: 20px 0;
+    width: 300px; /* Adjust as needed */
 }
 
 #output {
@@ -39,4 +45,28 @@ pre {
     box-sizing: border-box;
     border: 1px solid #ccc;
     border-radius: 5px;
+}
+/* Existing CSS styles */
+
+.console-container {
+    /* Existing styles */
+}
+
+.console-header {
+    background-color: #ddd;
+    padding: 5px;
+    border-bottom: 1px solid #ccc;
+}
+
+.console-header button {
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+    outline: none;
+    font-size: 16px;
+    padding: 0 5px;
+}
+
+.console {
+    /* Existing styles */
 }
