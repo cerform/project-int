@@ -1,13 +1,13 @@
 import os
 import mimetypes
-from flask import Flask, render_template, request, redirect, url_for, flash, send_file
+from flask import Flask, render_template, request, redirect, url_for, flash, send_file, send_from_directory
 from werkzeug.utils import secure_filename
 import mammoth
 from pptx import Presentation
 import fitz  # PyMuPDF
 
 app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = 'templates/uploads'
+app.config['UPLOAD_FOLDER'] = os.path.abspath('templates/uploads')
 app.secret_key = 'supersecretkey'
 
 app.config['ALLOWED_EXTENSIONS'] = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'docx', 'pptx'}
@@ -87,21 +87,37 @@ def search():
     search_results = search_files(query)
     return render_template('search_results.html', query=query, results=search_results)
 
+# Function to determine MIME type based on file extension
+def get_mime_type(filename):
+    return mimetypes.guess_type(filename)[0]
+
 @app.route('/open/<path:file_path>', methods=['GET'])
 def open_file(file_path):
     absolute_file_path = os.path.abspath(os.path.join(app.config['UPLOAD_FOLDER'], file_path))
 
-    # Debugging: Log the file path being accessed
-    print(f'Trying to open file: {absolute_file_path}')
+    print(f"Absolute file path: {absolute_file_path}")
 
     if os.path.exists(absolute_file_path):
         mime_type, _ = mimetypes.guess_type(absolute_file_path)
-        if mime_type and mime_type.startswith('text'):
-            with open(absolute_file_path, 'r', encoding='utf-8') as f:
-                content = f.read()
-            return render_template('docx_template.html', paragraphs=content.split('\n'))
+        print(f"MIME Type: {mime_type}")
+
+        if mime_type is not None:
+            if mime_type.startswith('text'):
+                with open(absolute_file_path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                return render_template('preview_text.html', content=content)
+            elif mime_type == 'application/pdf':
+                return send_file(absolute_file_path)
+            elif mime_type.startswith('image'):
+                return render_template('preview_image.html', file_path=file_path)
+            elif mime_type == 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
+                return render_template('preview_docx.html', file_path=absolute_file_path)
+            elif mime_type == 'application/vnd.openxmlformats-officedocument.presentationml.presentation':
+                return render_template('preview_pptx.html', file_path=absolute_file_path)
+            else:
+                return "File type not supported for preview"
         else:
-            return send_file(absolute_file_path, mimetype=mime_type, as_attachment=True)
+            return "Unknown file type"
     else:
         return "File not found", 404
 
