@@ -1,0 +1,79 @@
+from telebot import types
+import telebot
+from loguru import logger
+import os
+import time
+from img_proc import Img  # Ensure this import matches your project structure
+
+class Bot:
+    def __init__(self, token, telegram_chat_url):
+        logger.info("Initializing bot...")
+        self.telegram_bot_client = telebot.TeleBot(token)
+        self.telegram_bot_client.remove_webhook()
+        time.sleep(1)  # Ensure webhook is cleanly removed before setting a new one
+        self.telegram_bot_client.set_webhook(url=f'{telegram_chat_url}/{token}/', timeout=60)
+        self.user_images = {}  # Dictionary to track user image paths
+
+    def send_menu(self, chat_id, text="Choose an action:"):
+        markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
+        buttons = ['Blur', 'Rotate', 'Salt & Pepper', 'Contour', 'Concatenate', 'Segment']
+        for button in buttons:
+            markup.add(types.KeyboardButton(button))
+        self.telegram_bot_client.send_message(chat_id, text, reply_markup=markup)
+        logger.info("Menu sent to user.")
+
+    def handle_message(self, msg):
+        chat_id = msg.chat.id
+        if msg.content_type == 'photo':
+            logger.info("Photo received.")
+            img_path = self.download_user_photo(msg)
+            self.user_images[chat_id] = img_path
+            self.send_menu(chat_id, "Image received! Please select a filter:")
+        elif msg.content_type == 'text':
+            command = msg.text.lower()
+            if command in ['blur', 'rotate', 'salt & pepper', 'contour', 'concatenate', 'segment']:
+                self.apply_filter(chat_id, command)
+            else:
+                self.send_menu(chat_id)
+
+    def download_user_photo(self, msg):
+        file_id = msg.photo[-1].file_id
+        file_info = self.telegram_bot_client.get_file(file_id)
+        downloaded_file = self.telegram_bot_client.download_file(file_info.file_path)
+        local_file_path = os.path.join('photos', file_id + '.jpg')
+        if not os.path.exists('photos'):
+            os.makedirs('photos')
+        with open(local_file_path, 'wb') as photo:
+            photo.write(downloaded_file)
+        logger.info(f"Photo saved to {local_file_path}.")
+        return local_file_path
+
+    def apply_filter(self, chat_id, filter_type):
+        img_path = self.user_images.get(chat_id)
+        if not img_path:
+            self.send_text(chat_id, "Please upload an image first.")
+            return
+        logger.info(f"Applying {filter_type} filter.")
+        img = Img(img_path)
+        filter_func = getattr(img, filter_type.replace(' & ', '_').replace(' ', '_').lower(), None)
+        if callable(filter_func):
+            filter_func()
+            processed_path = img.save_img()
+            self.send_photo(chat_id, processed_path)
+        else:
+            self.send_text(chat_id, "Invalid filter selected.")
+
+    def send_photo(self, chat_id, img_path):
+        with open(img_path, 'rb') as photo:
+            self.telegram_bot_client.send_photo(chat_id, photo)
+        logger.info(f"Processed image sent to {chat_id}.")
+
+    def send_text(self, chat_id, text):
+        self.telegram_bot_client.send_message(chat_id, text)
+        logger.info(f"Message sent to {chat_id}: {text}")
+
+class ImageProcessingBot(Bot):
+    # This subclass could be expanded with additional image processing functionalities if needed.
+    pass
+
+# Main function or integration with app.py should handle bot initialization and start listening for messages.
