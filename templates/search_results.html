@@ -9,7 +9,7 @@
             {% for file_path, content in results.items() %}
                 <li>
                     <a href="{{ url_for('open_file', file_path=file_path) }}" target="_blank">{{ file_path }}</a>
-                    <p>{{ content[:300] }}...</p> <!-- Display the first 300 characters as a preview -->
+                    <p>{{ content|truncate(300) }}</p> <!-- Display the first 300 characters as a preview -->
                 </li>
             {% endfor %}
         </ul>

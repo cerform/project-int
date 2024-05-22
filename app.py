@@ -89,10 +89,15 @@ def search():
 
 # Function to determine MIME type based on file extension
 def get_mime_type(filename):
+<<<<<<< HEAD
     if filename.endswith('.ipynb'):
         return 'application/x-ipynb+json'
     else:
         return mimetypes.guess_type(filename)[0]
+=======
+    return mimetypes.guess_type(filename)[0]
+
+>>>>>>> main
 @app.route('/open/<path:file_path>', methods=['GET'])
 def open_file(file_path):
     absolute_file_path = os.path.abspath(os.path.join(app.config['UPLOAD_FOLDER'], file_path))
@@ -109,10 +114,13 @@ def open_file(file_path):
             return render_template('preview_docx.html', file_path=absolute_file_path)
         elif mime_type == 'application/vnd.openxmlformats-officedocument.presentationml.presentation':
             return render_template('preview_pptx.html', file_path=absolute_file_path)
+<<<<<<< HEAD
         elif mime_type == 'application/x-ipynb+json':
             with open(absolute_file_path, 'r', encoding='utf-8') as f:
                 content = f.read()
             return render_template('ipynb_preview.html', content=content)
+=======
+>>>>>>> main
         else:
             return "File type not supported for preview"
     else:
