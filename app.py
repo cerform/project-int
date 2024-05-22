@@ -201,6 +201,13 @@ def search():
 def get_mime_type(filename):
     return mimetypes.guess_type(filename)[0]
 
+@app.route('/pptx_preview')
+def pptx_preview():
+    # Retrieve slides content (you need to implement this logic)
+    slides_content = get_slides_content()
+
+    # Pass slides_content to the template
+    return render_template('pptx_preview.html', slides_content=slides_content)
 
 @app.route('/open/<path:file_path>', methods=['GET'])
 def open_file(file_path):
@@ -225,7 +232,7 @@ def open_file(file_path):
             return render_template('preview_text.html', content=content)
         elif file_extension == 'ipynb':
             content = extract_text_from_ipynb(absolute_file_path)
-            return render_template('preview_text.html', content=content)
+            return render_template('preview_ipynb.html', content=content)  # Use ipynb_preview.html template
         else:
             mime_type, _ = mimetypes.guess_type(absolute_file_path)
             if mime_type is not None:
@@ -245,10 +252,6 @@ def open_file(file_path):
                 return "Unknown file type"
     else:
         return "File not found", 404
-
-
-
-
 
 @app.route('/upload', methods=['POST'])
 def upload():
