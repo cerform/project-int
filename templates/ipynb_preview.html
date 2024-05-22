@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IPYNB Preview</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <!-- Include Font Awesome CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+</head>
+<body>
+
+    <h1>IPYNB Preview</h1>
+    <pre>{{ content }}</pre>
+
+    <h2>Python Console</h2>
+    <div id="console-container">
+        <div id="console">
+            <div id="console-header">
+                <!-- Use Font Awesome icons for minimize, maximize, and clear -->
+                <button id="minimize-button"><i class="fas fa-window-minimize"></i></button>
+                <button id="maximize-button"><i class="fas fa-window-maximize"></i></button>
+                <button id="clear-button"><i class="fas fa-trash-alt"></i> Clear</button>
+            </div>
+            <div id="output"></div>
+            <input type="text" id="input" placeholder="Type your Python code here...">
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.18.1/full/pyodide.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", async () => {
+            const inputElement = document.getElementById("input");
+            const outputElement = document.getElementById("output");
+            const consoleElement = document.getElementById("console");
+            const minimizeButton = document.getElementById("minimize-button");
+            const maximizeButton = document.getElementById("maximize-button");
+            const clearButton = document.getElementById("clear-button");
+
+            // Load Pyodide with the correct indexURL
+            let pyodide;
+            try {
+                pyodide = await loadPyodide({
+                    indexURL: "https://cdn.jsdelivr.net/pyodide/v0.18.1/full/"
+                });
+            } catch (error) {
+                console.error("Error loading Pyodide:", error);
+                outputElement.innerHTML += `<div style="color: red;">Error loading Pyodide: ${error.message}</div>`;
+                return;
+            }
+
+            minimizeButton.addEventListener("click", () => {
+                consoleElement.style.height = "40px"; // Set the height of the console to a small value
+                maximizeButton.style.display = "block"; // Show the maximize button
+                minimizeButton.style.display = "none"; // Hide the minimize button
+            });
+
+            maximizeButton.addEventListener("click", () => {
+                consoleElement.style.height = "auto"; // Set the height of the console back to auto
+                maximizeButton.style.display = "none"; // Hide the maximize button
+                minimizeButton.style.display = "block"; // Show the minimize button
+            });
+
+            clearButton.addEventListener("click", () => {
+                outputElement.innerHTML = ""; // Clear the output
+            });
+
+            inputElement.addEventListener("keydown", async (event) => {
+                if (event.key === "Enter") {
+                    const code = inputElement.value;
+                    inputElement.value = "";
+
+                    // Display the input code
+                    outputElement.innerHTML += `<div>> ${code}</div>`;
+                    outputElement.scrollTop = outputElement.scrollHeight;
+
+                    try {
+                        // Capture the standard output from Python
+                        let result = await pyodide.runPythonAsync(`
+import io
+import sys
+from contextlib import redirect_stdout, redirect_stderr
+
+f = io.StringIO()
+with redirect_stdout(f), redirect_stderr(f):
+    exec(${JSON.stringify(code)})
+
+f.getvalue()
+                        `);
+
+                        // Display the captured output
+                        outputElement.innerHTML += `<div>${result}</div>`;
+                    } catch (err) {
+                        let errorMessage = err.toString();
+
+                        // Check for common Python 2 to 3 syntax error
+                        if (errorMessage.includes("SyntaxError: Missing parentheses in call to 'print'")) {
+                            errorMessage += "<br>Hint: In Python 3, use print('Hello World') instead of print 'Hello World'.";
+                        }
+
+                        outputElement.innerHTML += `<div style="color: red;">${errorMessage}</div>`;
+                    }
+
+                    outputElement.scrollTop = outputElement.scrollHeight;
+                }
+            });
+        });
+    </script>
+</body>
+</html>
