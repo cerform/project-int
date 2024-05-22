@@ -5,27 +5,96 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PPTX Preview</title>
     <style>
-        .slide-container {
+        .slides-container {
             display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
+            flex-direction: column; /* Display slides vertically */
             gap: 20px;
+            max-width: 600px; /* Limit the width of the slides container */
+            overflow-y: auto; /* Add a vertical scroll bar if needed */
+            height: 80vh; /* Limit the height of the slides container */
         }
-
-        .slide-image {
+        .slide {
+            border: 1px solid #ddd;
+            padding: 10px;
+            max-width: 600px;
+        }
+        .slide-content {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .slide img {
             max-width: 100%;
             height: auto;
             border: 1px solid #ddd;
             padding: 5px;
         }
+        .slide p {
+            margin: 5px 0;
+        }
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        .navigation-buttons button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
     <h1>PPTX Preview</h1>
-    <div class="slide-container">
-        {% for image in images %}
-            <img src="{{ image }}" class="slide-image" alt="Slide">
+    <div class="slides-container">
+        {% for slide in slides_content %}
+            <div class="slide" id="slide{{ slide.slide_index }}">
+                <h2>Slide {{ slide.slide_index + 1 }}</h2>
+                <div class="slide-content">
+                    {% for content in slide.content %}
+                        {% if content.type == 'text' %}
+                            <p>{{ content.content }}</p>
+                        {% elif content.type == 'image' %}
+                            <!-- Replace backslashes with forward slashes in the image path -->
+                            {% set image_path = content.content.replace('\\', '/') %}
+                            <!-- Display the image -->
+                            <img src="{{ url_for('static', filename=image_path) }}" alt="Slide image">
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
         {% endfor %}
     </div>
+    <div class="navigation-buttons">
+        <button onclick="prevSlide()">Previous</button>
+        <button onclick="nextSlide()">Next</button>
+    </div>
+
+    <script>
+        let currentSlideIndex = 0;
+        const slides = document.querySelectorAll('.slide');
+
+        function showSlide(slideIndex) {
+            slides.forEach((slide, index) => {
+                slide.style.display = index === slideIndex ? 'block' : 'none';
+            });
+            currentSlideIndex = slideIndex;
+        }
+
+        function prevSlide() {
+            if (currentSlideIndex > 0) {
+                showSlide(currentSlideIndex - 1);
+            }
+        }
+
+        function nextSlide() {
+            if (currentSlideIndex < slides.length - 1) {
+                showSlide(currentSlideIndex + 1);
+            }
+        }
+
+        // Show the first slide initially
+        showSlide(0);
+    </script>
 </body>
 </html>

@@ -89,35 +89,32 @@ def search():
 
 # Function to determine MIME type based on file extension
 def get_mime_type(filename):
-    return mimetypes.guess_type(filename)[0]
-
+    if filename.endswith('.ipynb'):
+        return 'application/x-ipynb+json'
+    else:
+        return mimetypes.guess_type(filename)[0]
 @app.route('/open/<path:file_path>', methods=['GET'])
 def open_file(file_path):
     absolute_file_path = os.path.abspath(os.path.join(app.config['UPLOAD_FOLDER'], file_path))
 
-    print(f"Absolute file path: {absolute_file_path}")
-
     if os.path.exists(absolute_file_path):
-        mime_type, _ = mimetypes.guess_type(absolute_file_path)
-        print(f"MIME Type: {mime_type}")
-
-        if mime_type is not None:
-            if mime_type.startswith('text'):
-                with open(absolute_file_path, 'r', encoding='utf-8') as f:
-                    content = f.read()
-                return render_template('preview_text.html', content=content)
-            elif mime_type == 'application/pdf':
-                return send_file(absolute_file_path)
-            elif mime_type.startswith('image'):
-                return render_template('preview_image.html', file_path=file_path)
-            elif mime_type == 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
-                return render_template('preview_docx.html', file_path=absolute_file_path)
-            elif mime_type == 'application/vnd.openxmlformats-officedocument.presentationml.presentation':
-                return render_template('preview_pptx.html', file_path=absolute_file_path)
-            else:
-                return "File type not supported for preview"
+        mime_type = get_mime_type(absolute_file_path)
+        if mime_type and mime_type.startswith('text'):
+            with open(absolute_file_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            return render_template('preview_text.html', content=content)
+        elif mime_type == 'application/pdf':
+            return send_from_directory(app.config['UPLOAD_FOLDER'], file_path)
+        elif mime_type == 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
+            return render_template('preview_docx.html', file_path=absolute_file_path)
+        elif mime_type == 'application/vnd.openxmlformats-officedocument.presentationml.presentation':
+            return render_template('preview_pptx.html', file_path=absolute_file_path)
+        elif mime_type == 'application/x-ipynb+json':
+            with open(absolute_file_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            return render_template('ipynb_preview.html', content=content)
         else:
-            return "Unknown file type"
+            return "File type not supported for preview"
     else:
         return "File not found", 404
 
