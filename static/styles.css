@@ -1,72 +1,23 @@
-body {
-    font-family: Arial, sans-serif;
-    margin: 20px;
-}
-
-h1, h2 {
-    font-size: 24px;
-}
-
-pre {
-    background-color: #f4f4f4;
-    padding: 10px;
-    border-radius: 5px;
-    white-space: pre-wrap; /* Allows long lines to break and wrap */
-}
-
-#console-container {
-    position: fixed;
-    bottom: 20px; /* Adjust as needed */
-    right: 20px; /* Adjust as needed */
-    z-index: 1000; /* Ensure console is above other content */
-}
-
-#console {
-    border: 1px solid #ccc;
-    padding: 10px;
-    border-radius: 5px;
-    width: 300px; /* Adjust as needed */
-}
-
-#output {
-    height: 200px;
-    overflow-y: auto;
-    border: 1px solid #ccc;
-    padding: 10px;
-    background-color: #f9f9f9;
-    margin-bottom: 10px;
-    font-size: 14px; /* Smaller font size */
-}
-
-#input {
+.slides-container {
     width: 100%;
-    padding: 8px;
-    font-size: 14px; /* Smaller font size */
-    box-sizing: border-box;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-}
-/* Existing CSS styles */
-
-.console-container {
-    /* Existing styles */
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
-.console-header {
-    background-color: #ddd;
-    padding: 5px;
-    border-bottom: 1px solid #ccc;
+.slide {
+    display: none;
 }
 
-.console-header button {
-    background-color: transparent;
-    border: none;
-    cursor: pointer;
-    outline: none;
-    font-size: 16px;
-    padding: 0 5px;
+.slide.active {
+    display: block;
+    max-width: 800px;
+    max-height: 600px;
+    margin: 0 auto;
 }
 
-.console {
-    /* Existing styles */
+.slide img {
+    max-width: 100%;
+    max-height: 100%;
 }

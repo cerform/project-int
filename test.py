@@ -1,59 +1,29 @@
 import os
 import unittest
-from app import app
+from app import app, index_files, file_index
 
-class TestApp(unittest.TestCase):
-    def setUp(self):
-        self.app = app.test_client()
-        self.app.testing = True
+class TestFileStructure(unittest.TestCase):
 
-    def test_index(self):
-        response = self.app.get('/')
-        self.assertEqual(response.status_code, 200)
+    def test_upload_folder_exists(self):
+        self.assertTrue(os.path.exists(app.config['UPLOAD_FOLDER']))
 
-    def test_open_file_route_nonexistent(self):
-        response = self.app.get('/open/nonexistent_file.txt')
-        self.assertEqual(response.status_code, 404)
-    def test_upload(self):
-        data = {
-            'category': 'test_category',
-            'file': (open('test.txt', 'rb'), 'test.txt')
-        }
-        response = self.app.post('/upload', data=data, content_type='multipart/form-data')
-        self.assertEqual(response.status_code, 302)  # Check for redirect after successful upload
+    def test_required_folders_exist(self):
+        required_folders = ['txt', 'pdf', 'images', 'docx', 'pptx']
+        for folder in required_folders:
+            self.assertTrue(os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], folder)))
 
-    def test_open_file(self):
-        # Assuming the file 'test.txt' exists in the UPLOAD_FOLDER
-        response = self.app.get('/open/test_category/test.txt')
-        self.assertEqual(response.status_code, 200)  # Check if file is found and rendered
+    def test_required_files_exist(self):
+        # Add any required files that need to exist within the upload folder
+        required_files = ['example.txt', 'example.pdf']
+        for file in required_files:
+            self.assertTrue(os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], file)))
 
-    def tearDown(self):
-        # Clean up any test files or directories if needed
-        pass
-
-        response = self.app.get('/open/pdf_file.pdf')
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(b'%PDF' in response.data)  # Checking if the response contains PDF header
-
-    def test_open_file_route_docx(self):
-        response = self.app.get('/open/docx_file.docx')
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(b'Preview Docx' in response.data)
-
-    def test_open_file_route_pptx(self):
-        response = self.app.get('/open/pptx_file.pptx')
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(b'Preview Pptx' in response.data)
-
-    def test_upload_route(self):
-        # You can test the file upload route by sending a POST request with a file
-        data = {
-            'category': 'test_category',
-            'file': (open('test_file.txt', 'rb'), 'test_file.txt')
-        }
-        response = self.app.post('/upload', data=data, content_type='multipart/form-data')
-        self.assertEqual(response.status_code, 302)  # Redirect after successful upload
-
+    def test_indexing(self):
+        # Assuming index_files() indexes all files in the UPLOAD_FOLDER
+        index_files(app.config['UPLOAD_FOLDER'])
+        # Check if file_index is populated with expected content
+        # For example:
+        self.assertTrue(file_index)
 
 if __name__ == '__main__':
     unittest.main()

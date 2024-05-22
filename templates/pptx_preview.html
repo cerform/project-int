@@ -1,0 +1,90 @@
+<!-- pptx_preview.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PPTX Preview</title>
+</head>
+<body>
+    <h1>PPTX Preview</h1>
+    <!-- Loop through each slide content -->
+    {% for slide in slides_content %}
+    <div class="slide">
+        <h2>Slide {{ slide.slide_index + 1 }}</h2>
+        <!-- Display text content -->
+        {% for content_item in slide.content %}
+            {% if content_item.type == 'text' %}
+                <p>{{ content_item.content }}</p>
+            {% endif %}
+        {% endfor %}
+        <!-- Display image content -->
+        {% for content_item in slide.content %}
+            {% if content_item.type == 'image' %}
+                <img src="{{ content_item.content }}" alt="Slide Image">
+            {% endif %}
+        {% endfor %}
+    </div>
+    {% endfor %}
+
+    <!-- Slides player -->
+    <div class="slides-container">
+        {% for slide in slides_content %}
+        <div class="slide">
+            <h2>Slide {{ slide.slide_index + 1 }}</h2>
+            <!-- Display text content -->
+            {% for content_item in slide.content %}
+                {% if content_item.type == 'text' %}
+                    <p>{{ content_item.content }}</p>
+                {% endif %}
+            {% endfor %}
+            <!-- Display image content -->
+            {% for content_item in slide.content %}
+                {% if content_item.type == 'image' %}
+                    <img src="{{ url_for('static', filename=content_item.content) }}" alt="Slide Image">
+                {% endif %}
+            {% endfor %}
+        </div>
+        {% endfor %}
+        <!-- Navigation buttons -->
+        <button id="prevBtn">Previous</button>
+        <button id="nextBtn">Next</button>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var slides = document.querySelectorAll('.slide');
+            var currentIndex = 0;
+
+            function showSlide(index) {
+                slides.forEach(function(slide) {
+                    slide.style.display = 'none';
+                });
+                slides[index].style.display = 'block';
+            }
+
+            function nextSlide() {
+                currentIndex = (currentIndex + 1) % slides.length;
+                showSlide(currentIndex);
+            }
+
+            function prevSlide() {
+                currentIndex = (currentIndex - 1 + slides.length) % slides.length;
+                showSlide(currentIndex);
+            }
+
+            // Show the first slide initially
+            showSlide(currentIndex);
+
+            // Event listeners for navigation buttons
+            document.getElementById('prevBtn').addEventListener('click', function() {
+                prevSlide();
+            });
+
+            document.getElementById('nextBtn').addEventListener('click', function() {
+                nextSlide();
+            });
+        });
+    </script>
+</body>
+</html>

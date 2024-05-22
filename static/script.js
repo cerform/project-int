@@ -1,56 +1,50 @@
-document.addEventListener("DOMContentLoaded", async () => {
-    const inputElement = document.getElementById("input");
-    const outputElement = document.getElementById("output");
+document.addEventListener('DOMContentLoaded', function() {
+    var slides = document.querySelectorAll('.slide');
+    var currentIndex = 0;
+    var autoplayInterval;
 
-    // Load Pyodide with the correct indexURL
-    let pyodide;
-    try {
-        pyodide = await loadPyodide({
-            indexURL: "https://cdn.jsdelivr.net/pyodide/v0.18.1/full/"
+    function showSlide(index) {
+        slides.forEach(function(slide) {
+            slide.style.display = 'none';
         });
-    } catch (error) {
-        console.error("Error loading Pyodide:", error);
-        outputElement.innerHTML += `<div style="color: red;">Error loading Pyodide: ${error.message}</div>`;
-        return;
+        slides[index].style.display = 'block';
     }
 
-    inputElement.addEventListener("keydown", async (event) => {
-        if (event.key === "Enter") {
-            const code = inputElement.value;
-            inputElement.value = "";
+    function nextSlide() {
+        currentIndex = (currentIndex + 1) % slides.length;
+        showSlide(currentIndex);
+    }
 
-            // Display the input code
-            outputElement.innerHTML += `<div>> ${code}</div>`;
-            outputElement.scrollTop = outputElement.scrollHeight;
+    function prevSlide() {
+        currentIndex = (currentIndex - 1 + slides.length) % slides.length;
+        showSlide(currentIndex);
+    }
 
-            try {
-                // Capture the standard output from Python
-                let result = await pyodide.runPythonAsync(`
-import io
-import sys
-from contextlib import redirect_stdout, redirect_stderr
+    function startAutoplay() {
+        autoplayInterval = setInterval(nextSlide, 2000); // Change slide every 2 seconds
+    }
 
-f = io.StringIO()
-with redirect_stdout(f), redirect_stderr(f):
-    exec(${JSON.stringify(code)})
+    function stopAutoplay() {
+        clearInterval(autoplayInterval);
+    }
 
-f.getvalue()
-                `);
+    // Show the first slide initially
+    showSlide(currentIndex);
 
-                // Display the captured output
-                outputElement.innerHTML += `<div>${result}</div>`;
-            } catch (err) {
-                let errorMessage = err.toString();
+    // Event listeners for navigation buttons
+    document.getElementById('prevBtn').addEventListener('click', function() {
+        prevSlide();
+    });
 
-                // Check for common Python 2 to 3 syntax error
-                if (errorMessage.includes("SyntaxError: Missing parentheses in call to 'print'")) {
-                    errorMessage += "<br>Hint: In Python 3, use print('Hello World') instead of print 'Hello World'.";
-                }
+    document.getElementById('nextBtn').addEventListener('click', function() {
+        nextSlide();
+    });
 
-                outputElement.innerHTML += `<div style="color: red;">${errorMessage}</div>`;
-            }
+    document.getElementById('autoplayBtn').addEventListener('click', function() {
+        startAutoplay();
+    });
 
-            outputElement.scrollTop = outputElement.scrollHeight;
-        }
+    document.getElementById('stopAutoplayBtn').addEventListener('click', function() {
+        stopAutoplay();
     });
 });
