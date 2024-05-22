@@ -1,32 +1,58 @@
-<!-- preview_pptx.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PPTX Preview</title>
     <style>
-        .slide-container {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 20px;
+        #pptx-container {
+            width: 800px;
+            margin: 0 auto;
         }
-
-        .slide-image {
-            max-width: 100%;
-            height: auto;
-            border: 1px solid #ddd;
-            padding: 5px;
+        #pptx-frame {
+            width: 100%;
+            height: 600px;
+        }
+        #controls {
+            text-align: center;
+            margin-top: 20px;
+        }
+        button {
+            margin: 0 10px;
         }
     </style>
 </head>
 <body>
-    <h1>PPTX Preview</h1>
-    <div class="slide-container">
-        {% for image in images %}
-            <img src="{{ image }}" class="slide-image" alt="Slide">
-        {% endfor %}
+    <div id="pptx-container">
+        <iframe id="pptx-frame" src="{{ url_for('static', filename=file_path) }}"></iframe>
+        <div id="controls">
+            <button onclick="previousSlide()">Previous</button>
+            <button onclick="nextSlide()">Next</button>
+        </div>
     </div>
+    <a href="{{ url_for('index') }}">Back to Home</a>
+
+    <script>
+        var frame = document.getElementById('pptx-frame');
+        var totalSlides = frame.contentWindow.document.getElementsByTagName('slide').length;
+        var currentSlide = 1;
+
+        function previousSlide() {
+            if (currentSlide > 1) {
+                currentSlide--;
+                goToSlide(currentSlide);
+            }
+        }
+
+        function nextSlide() {
+            if (currentSlide < totalSlides) {
+                currentSlide++;
+                goToSlide(currentSlide);
+            }
+        }
+
+        function goToSlide(slideNumber) {
+            frame.contentWindow.postMessage({ type: 'goToSlide', slideNumber: slideNumber }, '*');
+        }
+    </script>
 </body>
 </html>

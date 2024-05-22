@@ -2,13 +2,11 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Preview Document</title>
+    <title>DOCX File Preview</title>
 </head>
 <body>
-    <h1>Preview Document</h1>
-    <div>
-        {{ content }}
-    </div>
+    <h1>DOCX File Preview</h1>
+    <iframe src="{{ url_for('static', filename=file_path) }}" width="100%" height="600"></iframe>
+    <a href="{{ url_for('index') }}">Back to Home</a>
 </body>
 </html>

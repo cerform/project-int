@@ -1,16 +1,19 @@
 import os
 import mimetypes
-from flask import Flask, render_template, request, redirect, url_for, flash, send_file, send_from_directory
+from flask import Flask, render_template, request, redirect, url_for, flash, send_file, send_from_directory, abort
 from werkzeug.utils import secure_filename
 import mammoth
 from pptx import Presentation
 import fitz  # PyMuPDF
+import nbformat
 
 app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = os.path.abspath('templates/uploads')
+app.config['TEMPLATE_FOLDER'] = 'templates'
+app.config['UPLOAD_FOLDER'] = os.path.abspath('uploads')
+app.config['STATIC_FOLDER'] = os.path.abspath('static')
 app.secret_key = 'supersecretkey'
 
-app.config['ALLOWED_EXTENSIONS'] = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'docx', 'pptx'}
+app.config['ALLOWED_EXTENSIONS'] = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'docx', 'pptx', 'ipynb'}
 
 file_index = {}
 
@@ -42,6 +45,15 @@ def extract_text_from_pptx(path):
                 text.append(shape.text)
     return "\n".join(text)
 
+def extract_text_from_ipynb(path):
+    with open(path, 'r', encoding='utf-8') as file:
+        notebook = nbformat.read(file, as_version=4)
+    text = []
+    for cell in notebook.cells:
+        if cell.cell_type in ['markdown', 'code']:
+            text.append(cell.source)
+    return "\n".join(text)
+
 def index_files(upload_folder):
     file_index.clear()
     for root, dirs, files in os.walk(upload_folder):
@@ -55,6 +67,8 @@ def index_files(upload_folder):
                 content = extract_text_from_docx(file_path)
             elif file.endswith('.pptx'):
                 content = extract_text_from_pptx(file_path)
+            elif file.endswith('.ipynb'):
+                content = extract_text_from_ipynb(file_path)
             else:
                 continue
             relative_path = os.path.relpath(file_path, upload_folder)
@@ -89,28 +103,53 @@ def search():
 
 # Function to determine MIME type based on file extension
 def get_mime_type(filename):
-    return mimetypes.guess_type(filename)[0]
+    if filename.endswith('.ipynb'):
+        return 'application/x-ipynb+json'
+    elif filename.endswith('.pptx'):
+        return 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+    else:
+        return mimetypes.guess_type(filename)[0]
 
 @app.route('/open/<path:file_path>', methods=['GET'])
 def open_file(file_path):
+    # Replace backslashes with forward slashes
+    file_path = file_path.replace('\\', '/')
+
     absolute_file_path = os.path.abspath(os.path.join(app.config['UPLOAD_FOLDER'], file_path))
 
     if os.path.exists(absolute_file_path):
         mime_type = get_mime_type(absolute_file_path)
-        if mime_type and mime_type.startswith('text'):
+
+        if mime_type is None:
+            # Fallback mechanism
+            return "MIME type could not be determined. File type not supported for preview."
+        elif mime_type.startswith('text'):
             with open(absolute_file_path, 'r', encoding='utf-8') as f:
                 content = f.read()
             return render_template('preview_text.html', content=content)
         elif mime_type == 'application/pdf':
-            return send_from_directory(app.config['UPLOAD_FOLDER'], file_path)
+            return send_file(absolute_file_path, mimetype='application/pdf')
         elif mime_type == 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
-            return render_template('preview_docx.html', file_path=absolute_file_path)
+            return send_file(absolute_file_path, mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
         elif mime_type == 'application/vnd.openxmlformats-officedocument.presentationml.presentation':
-            return render_template('preview_pptx.html', file_path=absolute_file_path)
+            # Serve the PPTX file using Reveal.js
+            prs = Presentation(absolute_file_path)
+            slides = []
+            for slide in prs.slides:
+                slide_text = []
+                for shape in slide.shapes:
+                    if hasattr(shape, "text"):
+                        slide_text.append(shape.text)
+                slides.append("<br>".join(slide_text))
+            return render_template('reveal.html', slides=slides)
+        elif mime_type == 'application/x-ipynb+json':
+            with open(absolute_file_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            return render_template('preview_ipynb.html', content=content)
         else:
             return "File type not supported for preview"
     else:
-        return "File not found", 404
+        abort(404)
 
 @app.route('/upload', methods=['POST'])
 def upload():
@@ -134,6 +173,7 @@ def upload():
     else:
         flash('File type not allowed')
         return redirect(request.url)
+
 
 if __name__ == '__main__':
     index_files(app.config['UPLOAD_FOLDER'])  # Index files on startup
