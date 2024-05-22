@@ -1,56 +1,41 @@
-document.addEventListener("DOMContentLoaded", async () => {
-    const inputElement = document.getElementById("input");
-    const outputElement = document.getElementById("output");
+document.addEventListener("DOMContentLoaded", () => {
+    const consoleContainer = document.getElementById("console-container");
+    const minimizeBtn = document.getElementById("minimize-btn");
+    const maximizeBtn = document.getElementById("maximize-btn");
 
-    // Load Pyodide with the correct indexURL
-    let pyodide;
-    try {
-        pyodide = await loadPyodide({
-            indexURL: "https://cdn.jsdelivr.net/pyodide/v0.18.1/full/"
-        });
-    } catch (error) {
-        console.error("Error loading Pyodide:", error);
-        outputElement.innerHTML += `<div style="color: red;">Error loading Pyodide: ${error.message}</div>`;
-        return;
+    // Function to update the position of the console window
+    function updateConsolePosition() {
+        const scrollY = window.scrollY || window.pageYOffset;
+        const windowHeight = window.innerHeight;
+        const consoleHeight = consoleContainer.offsetHeight;
+
+        // Calculate the new top position based on scroll and window height
+        let newTop = windowHeight - consoleHeight - 20; // Adjust as needed
+        newTop += scrollY; // Add scroll position
+
+        // Set the new top position
+        consoleContainer.style.top = `${newTop}px`;
     }
 
-    inputElement.addEventListener("keydown", async (event) => {
-        if (event.key === "Enter") {
-            const code = inputElement.value;
-            inputElement.value = "";
+    // Initial positioning
+    updateConsolePosition();
 
-            // Display the input code
-            outputElement.innerHTML += `<div>> ${code}</div>`;
-            outputElement.scrollTop = outputElement.scrollHeight;
+    // Update position on scroll
+    window.addEventListener("scroll", updateConsolePosition);
 
-            try {
-                // Capture the standard output from Python
-                let result = await pyodide.runPythonAsync(`
-import io
-import sys
-from contextlib import redirect_stdout, redirect_stderr
+    // Function to minimize the console window
+    function minimizeConsole() {
+        consoleContainer.classList.add("minimized");
+    }
 
-f = io.StringIO()
-with redirect_stdout(f), redirect_stderr(f):
-    exec(${JSON.stringify(code)})
+    // Function to maximize the console window
+    function maximizeConsole() {
+        consoleContainer.classList.remove("minimized");
+    }
 
-f.getvalue()
-                `);
+    // Event listener for the minimize button
+    minimizeBtn.addEventListener("click", minimizeConsole);
 
-                // Display the captured output
-                outputElement.innerHTML += `<div>${result}</div>`;
-            } catch (err) {
-                let errorMessage = err.toString();
-
-                // Check for common Python 2 to 3 syntax error
-                if (errorMessage.includes("SyntaxError: Missing parentheses in call to 'print'")) {
-                    errorMessage += "<br>Hint: In Python 3, use print('Hello World') instead of print 'Hello World'.";
-                }
-
-                outputElement.innerHTML += `<div style="color: red;">${errorMessage}</div>`;
-            }
-
-            outputElement.scrollTop = outputElement.scrollHeight;
-        }
-    });
+    // Event listener for the maximize button
+    maximizeBtn.addEventListener("click", maximizeConsole);
 });

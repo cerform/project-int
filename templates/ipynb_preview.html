@@ -5,8 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>IPYNB Preview</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-    <!-- Include Font Awesome CSS -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
 </head>
 <body>
 
@@ -16,12 +14,6 @@
     <h2>Python Console</h2>
     <div id="console-container">
         <div id="console">
-            <div id="console-header">
-                <!-- Use Font Awesome icons for minimize, maximize, and clear -->
-                <button id="minimize-button"><i class="fas fa-window-minimize"></i></button>
-                <button id="maximize-button"><i class="fas fa-window-maximize"></i></button>
-                <button id="clear-button"><i class="fas fa-trash-alt"></i> Clear</button>
-            </div>
             <div id="output"></div>
             <input type="text" id="input" placeholder="Type your Python code here...">
         </div>
@@ -32,10 +24,6 @@
         document.addEventListener("DOMContentLoaded", async () => {
             const inputElement = document.getElementById("input");
             const outputElement = document.getElementById("output");
-            const consoleElement = document.getElementById("console");
-            const minimizeButton = document.getElementById("minimize-button");
-            const maximizeButton = document.getElementById("maximize-button");
-            const clearButton = document.getElementById("clear-button");
 
             // Load Pyodide with the correct indexURL
             let pyodide;
@@ -48,22 +36,6 @@
                 outputElement.innerHTML += `<div style="color: red;">Error loading Pyodide: ${error.message}</div>`;
                 return;
             }
-
-            minimizeButton.addEventListener("click", () => {
-                consoleElement.style.height = "40px"; // Set the height of the console to a small value
-                maximizeButton.style.display = "block"; // Show the maximize button
-                minimizeButton.style.display = "none"; // Hide the minimize button
-            });
-
-            maximizeButton.addEventListener("click", () => {
-                consoleElement.style.height = "auto"; // Set the height of the console back to auto
-                maximizeButton.style.display = "none"; // Hide the maximize button
-                minimizeButton.style.display = "block"; // Show the minimize button
-            });
-
-            clearButton.addEventListener("click", () => {
-                outputElement.innerHTML = ""; // Clear the output
-            });
 
             inputElement.addEventListener("keydown", async (event) => {
                 if (event.key === "Enter") {
