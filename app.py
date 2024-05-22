@@ -107,8 +107,11 @@ def get_mime_type(filename):
         return 'application/x-ipynb+json'
     elif filename.endswith('.pptx'):
         return 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+    elif filename.endswith('.docx'):
+        return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
     else:
         return mimetypes.guess_type(filename)[0]
+
 
 @app.route('/open/<path:file_path>', methods=['GET'])
 def open_file(file_path):
@@ -121,7 +124,6 @@ def open_file(file_path):
         mime_type = get_mime_type(absolute_file_path)
 
         if mime_type is None:
-            # Fallback mechanism
             return "MIME type could not be determined. File type not supported for preview."
         elif mime_type.startswith('text'):
             with open(absolute_file_path, 'r', encoding='utf-8') as f:
@@ -130,7 +132,9 @@ def open_file(file_path):
         elif mime_type == 'application/pdf':
             return send_file(absolute_file_path, mimetype='application/pdf')
         elif mime_type == 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
-            return send_file(absolute_file_path, mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+            # Preview DOCX content
+            content = extract_text_from_docx(absolute_file_path)
+            return render_template('preview_text.html', content=content)
         elif mime_type == 'application/vnd.openxmlformats-officedocument.presentationml.presentation':
             # Serve the PPTX file using Reveal.js
             prs = Presentation(absolute_file_path)
@@ -150,6 +154,7 @@ def open_file(file_path):
             return "File type not supported for preview"
     else:
         abort(404)
+
 
 @app.route('/upload', methods=['POST'])
 def upload():
