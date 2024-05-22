@@ -1,3 +1,5 @@
-flask==2.1.0
-mammoth==1.5.1
-python-pptx==0.6.19
+Flask==2.0.3
+Werkzeug==2.0.3
+mammoth==1.4.2
+python-pptx==0.6.21
+PyMuPDF==1.19.6
