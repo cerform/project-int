@@ -1,10 +1,12 @@
 import os
 import mimetypes
-from flask import Flask, render_template, request, redirect, url_for, flash, send_file
+import subprocess
+from flask import Flask, render_template, request, redirect, url_for, flash, send_file, jsonify
 from werkzeug.utils import secure_filename
 import mammoth
 from pptx import Presentation
 import fitz  # PyMuPDF
+import shutil
 from jinja2 import Environment, FileSystemLoader, select_autoescape, Undefined
 import nbformat
 
@@ -57,8 +59,6 @@ def extract_text_and_images_from_pptx(file_path, uploads_dir):
         slides_content.append({'slide_index': slide_index, 'content': slide_content})
 
     return slides_content
-
-
 
 
 def create_directory(directory):
@@ -146,6 +146,8 @@ def search_files(query):
         if query.lower() in content.lower():
             results[file_path] = content
     return results
+
+
 def get_slides_content():
     # Define the function to fetch slides content from PPTX files
     # You can use the existing logic or modify it as needed
@@ -172,6 +174,7 @@ def get_slides_content():
 
     return slides_content
 
+
 @app.route('/')
 def index():
     categories = []
@@ -179,9 +182,6 @@ def index():
         for d in dirs:
             categories.append(d)
     return render_template('index.html', categories=categories)
-
-
-
 @app.route('/pptx_player/<path:file_path>')
 def pptx_player(file_path):
     absolute_file_path = os.path.abspath(os.path.join(app.config['UPLOAD_FOLDER'], file_path.replace('\\', '/')))
@@ -189,6 +189,7 @@ def pptx_player(file_path):
         return render_template('pptx_player.html', pptx_file=file_path)
     else:
         return "File not found", 404
+
 
 @app.route('/search', methods=['POST'])
 def search():
@@ -201,6 +202,7 @@ def search():
 def get_mime_type(filename):
     return mimetypes.guess_type(filename)[0]
 
+
 @app.route('/pptx_preview')
 def pptx_preview():
     # Retrieve slides content (you need to implement this logic)
@@ -209,13 +211,15 @@ def pptx_preview():
     # Pass slides_content to the template
     return render_template('pptx_preview.html', slides_content=slides_content)
 
+
 @app.route('/open/<path:file_path>', methods=['GET'])
 def open_file(file_path):
     # Replace backslashes with forward slashes in the file path
     file_path = file_path.replace("\\", "/")
 
     # Update this line to replace backslashes with forward slashes in the file path
-    absolute_file_path = os.path.abspath(os.path.join(app.config['UPLOAD_FOLDER'], file_path.replace('\\', '/')))
+    absolute_file_path = os.path.abspath(
+        os.path.join(app.config['UPLOAD_FOLDER'], file_path.replace('\\', '/')))
     print(f"Opening file: {absolute_file_path}")
 
     if os.path.exists(absolute_file_path):
@@ -225,7 +229,8 @@ def open_file(file_path):
             slides_content = extract_text_and_images_from_pptx(absolute_file_path, images_dir)
             slides_count = len(slides_content)  # Calculate the number of slides
             print(f"Slides content: {slides_content}")
-            return render_template('pptx_preview.html', slides_content=slides_content, slides_count=slides_count)
+            return render_template('pptx_preview.html', slides_content=slides_content,
+                                   slides_count=slides_count)
         elif file_extension == 'docx':
             with open(absolute_file_path, 'rb') as f:
                 content = mammoth.extract_raw_text(f).value
@@ -252,6 +257,7 @@ def open_file(file_path):
                 return "Unknown file type"
     else:
         return "File not found", 404
+
 
 @app.route('/upload', methods=['POST'])
 def upload():
@@ -308,9 +314,26 @@ def save_slides_by_category(slides_content, category_path):
                 # Copy image to slide folder
                 shutil.copy(image_path, dest_image_path)
 
-    print("Slides saved in categorized folders.")
+        print("Slides saved in categorized folders.")
+
+
+@app.route('/run_python', methods=['POST'])
+def run_python():
+    code = request.json.get('code', '')
+    try:
+        # Run the code in a subprocess and capture the output
+        result = subprocess.run(['python', '-c', code], capture_output=True, text=True, check=True)
+        output = result.stdout
+        error = result.stderr
+    except subprocess.CalledProcessError as e:
+        output = e.stdout
+        error = e.stderr
+
+    return jsonify({'output': output, 'error': error})
 
 
 if __name__ == '__main__':
     index_files(app.config['UPLOAD_FOLDER'])  # Index files on startup
     app.run(debug=True)
+
+
