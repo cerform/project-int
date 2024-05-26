@@ -336,4 +336,4 @@ if __name__ == '__main__':
     index_files(app.config['UPLOAD_FOLDER'])  # Index files on startup
     app.run(debug=True)
 
-
+#style updated#
