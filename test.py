@@ -1,50 +1,29 @@
 import os
 import unittest
-from app import *
+from app import app, index_files, file_index
 
-class TestPPTXExtraction(unittest.TestCase):
-    def setUp(self):
-        # Path to the test PowerPoint file
-        self.pptx_file_path = 'path_to_existing_or_new_test_pptx_file.pptx'
+class TestFileStructure(unittest.TestCase):
 
-        # Check if the file exists
-        if not os.path.exists(self.pptx_file_path):
-            # Create a new test PowerPoint file
-            self.create_test_pptx_file()
+    def test_upload_folder_exists(self):
+        self.assertTrue(os.path.exists(app.config['UPLOAD_FOLDER']))
 
-    def create_test_pptx_file(self):
-        # Write your code here to create a new test PowerPoint file
-        pass
+    def test_required_folders_exist(self):
+        required_folders = ['txt', 'pdf', 'images', 'docx', 'pptx']
+        for folder in required_folders:
+            self.assertTrue(os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], folder)))
 
-    def test_image_saved_correctly(self):
-        # Test whether images are extracted correctly from the PowerPoint file
-        slides_content = extract_text_and_images_from_pptx(self.pptx_file_path, 'test_images_dir')
-        # Write your assertions here
+    def test_required_files_exist(self):
+        # Add any required files that need to exist within the upload folder
+        required_files = ['example.txt', 'example.pdf']
+        for file in required_files:
+            self.assertTrue(os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], file)))
 
-if __name__ == '__main__':
-    unittest.main()
-import os
-import unittest
-from app import extract_text_and_images_from_pptx
-
-class TestPPTXExtraction(unittest.TestCase):
-    def setUp(self):
-        # Path to the test PowerPoint file
-        self.pptx_file_path = 'path_to_existing_or_new_test_pptx_file.pptx'
-
-        # Check if the file exists
-        if not os.path.exists(self.pptx_file_path):
-            # Create a new test PowerPoint file
-            self.create_test_pptx_file()
-
-    def create_test_pptx_file(self):
-        # Write your code here to create a new test PowerPoint file
-        pass
-
-    def test_image_saved_correctly(self):
-        # Test whether images are extracted correctly from the PowerPoint file
-        slides_content = extract_text_and_images_from_pptx(self.pptx_file_path, 'test_images_dir')
-        # Write your assertions here
+    def test_indexing(self):
+        # Assuming index_files() indexes all files in the UPLOAD_FOLDER
+        index_files(app.config['UPLOAD_FOLDER'])
+        # Check if file_index is populated with expected content
+        # For example:
+        self.assertTrue(file_index)
 
 if __name__ == '__main__':
     unittest.main()

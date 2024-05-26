@@ -4,97 +4,145 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PPTX Preview</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"> <!-- Font Awesome CSS -->
     <style>
+        /* Container for the presentation area */
+        .presentation-container {
+            width: 800px; /* Set a fixed width for the presentation area */
+            height: 600px; /* Set a fixed height for the presentation area */
+            overflow: hidden; /* Hide overflow content */
+            border: 1px solid #ccc; /* Add border for visualization */
+            position: relative; /* Positioning for absolute elements */
+            margin: 0 auto; /* Center the container horizontally */
+        }
+
+        /* Slides container */
         .slides-container {
-            display: flex;
-            flex-direction: column; /* Display slides vertically */
-            gap: 20px;
-            max-width: 600px; /* Limit the width of the slides container */
-            overflow-y: auto; /* Add a vertical scroll bar if needed */
-            height: 80vh; /* Limit the height of the slides container */
+            display: flex; /* Use flexbox for layout */
+            transition: transform 0.5s ease; /* Add smooth transition for slide changes */
+            width: 100%; /* Ensure slides container takes full width */
+            height: 100%; /* Ensure slides container takes full height */
         }
+
+        /* Individual slide */
         .slide {
-            border: 1px solid #ddd;
-            padding: 10px;
-            max-width: 600px;
+            flex: 0 0 auto; /* Prevent slides from growing */
+            width: 100%; /* Ensure slides take full width */
+            height: 100%; /* Ensure slides take full height */
         }
-        .slide-content {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
+
+        /* Slide image */
         .slide img {
-            max-width: 100%;
-            height: auto;
-            border: 1px solid #ddd;
-            padding: 5px;
+            max-width: 100%; /* Ensure image fits within slide */
+            max-height: 100%; /* Ensure image fits within slide */
+            display: block; /* Ensure image is displayed as a block element */
+            margin: auto; /* Center the image horizontally */
         }
-        .slide p {
-            margin: 5px 0;
-        }
-        .navigation-buttons {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 20px;
-        }
-        .navigation-buttons button {
-            padding: 10px 20px;
-            font-size: 16px;
+
+        /* Icon buttons */
+        .icon-btn {
+            background: none;
+            border: none;
             cursor: pointer;
+            font-size: 20px;
+            padding: 5px;
         }
     </style>
 </head>
 <body>
     <h1>PPTX Preview</h1>
-    <div class="slides-container">
-        {% for slide in slides_content %}
-            <div class="slide" id="slide{{ slide.slide_index }}">
-                <h2>Slide {{ slide.slide_index + 1 }}</h2>
-                <div class="slide-content">
-                    {% for content in slide.content %}
-                        {% if content.type == 'text' %}
-                            <p>{{ content.content }}</p>
-                        {% elif content.type == 'image' %}
-                            <!-- Replace backslashes with forward slashes in the image path -->
-                            {% set image_path = content.content.replace('\\', '/') %}
-                            <!-- Display the image -->
-                            <img src="{{ url_for('static', filename=image_path) }}" alt="Slide image">
-                        {% endif %}
-                    {% endfor %}
-                </div>
+
+    <!-- Container for the presentation area -->
+    <div class="presentation-container">
+        <!-- Slides container -->
+        <div class="slides-container">
+            <!-- Loop through each slide content -->
+            {% for slide in slides_content %}
+            <div class="slide">
+                <!-- Display text content -->
+                {% for content_item in slide.content %}
+                    {% if content_item.type == 'text' %}
+                        <p>{{ content_item.content }}</p>
+                    {% endif %}
+                {% endfor %}
+                <!-- Display image content -->
+                {% for content_item in slide.content %}
+                    {% if content_item.type == 'image' %}
+                        <img src="{{ url_for('static', filename=content_item.content) }}" alt="Slide Image">
+                    {% endif %}
+                {% endfor %}
             </div>
-        {% endfor %}
-    </div>
-    <div class="navigation-buttons">
-        <button onclick="prevSlide()">Previous</button>
-        <button onclick="nextSlide()">Next</button>
+            {% endfor %}
+        </div>
     </div>
 
+    <!-- Slideshow controls with icons -->
+    <button id="prevSlideBtn" class="icon-btn"><i class="fas fa-chevron-left"></i></button>
+    <button id="nextSlideBtn" class="icon-btn"><i class="fas fa-chevron-right"></i></button>
+    <button id="startSlideshowBtn" class="icon-btn"><i class="fas fa-play"></i></button>
+    <button id="stopSlideshowBtn" class="icon-btn"><i class="fas fa-pause"></i></button>
+
+    <script src="https://kit.fontawesome.com/a076d05399.js"></script> <!-- Font Awesome JS -->
     <script>
-        let currentSlideIndex = 0;
-        const slides = document.querySelectorAll('.slide');
+        document.addEventListener('DOMContentLoaded', function() {
+            var slidesContainer = document.querySelector('.slides-container');
+            var slides = document.querySelectorAll('.slide');
+            var currentIndex = 0;
+            var slideshowInterval;
 
-        function showSlide(slideIndex) {
-            slides.forEach((slide, index) => {
-                slide.style.display = index === slideIndex ? 'block' : 'none';
+            // Function to show a slide
+            function showSlide(index) {
+                slidesContainer.style.transform = `translateX(-${index * 100}%)`;
+            }
+
+            // Function to navigate to the previous slide
+            function prevSlide() {
+                currentIndex = (currentIndex - 1 + slides.length) % slides.length;
+                showSlide(currentIndex);
+            }
+
+            // Function to navigate to the next slide
+            function nextSlide() {
+                currentIndex = (currentIndex + 1) % slides.length;
+                showSlide(currentIndex);
+            }
+
+            // Function to start the slideshow
+            function startSlideshow() {
+                slideshowInterval = setInterval(function() {
+                    currentIndex = (currentIndex + 1) % slides.length;
+                    showSlide(currentIndex);
+                }, 2000); // Change the interval (in milliseconds) between slides here
+            }
+
+            // Function to stop the slideshow
+            function stopSlideshow() {
+                clearInterval(slideshowInterval);
+            }
+
+            // Event listener for previous slide button
+            document.getElementById('prevSlideBtn').addEventListener('click', function() {
+                prevSlide();
             });
-            currentSlideIndex = slideIndex;
-        }
 
-        function prevSlide() {
-            if (currentSlideIndex > 0) {
-                showSlide(currentSlideIndex - 1);
-            }
-        }
+            // Event listener for next slide button
+            document.getElementById('nextSlideBtn').addEventListener('click', function() {
+                nextSlide();
+            });
 
-        function nextSlide() {
-            if (currentSlideIndex < slides.length - 1) {
-                showSlide(currentSlideIndex + 1);
-            }
-        }
+            // Event listener for start slideshow button
+            document.getElementById('startSlideshowBtn').addEventListener('click', function() {
+                startSlideshow();
+            });
 
-        // Show the first slide initially
-        showSlide(0);
+            // Event listener for stop slideshow button
+            document.getElementById('stopSlideshowBtn').addEventListener('click', function() {
+                stopSlideshow();
+            });
+
+            // Show the first slide initially
+            showSlide(currentIndex);
+        });
     </script>
 </body>
 </html>
