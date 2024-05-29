@@ -234,7 +234,7 @@ def open_file(file_path):
         elif file_extension == 'docx':
             with open(absolute_file_path, 'rb') as f:
                 content = mammoth.extract_raw_text(f).value
-            return render_template('preview_text.html', content=content)
+            return render_template('preview_docx.html', content=content)
         elif file_extension == 'ipynb':
             content = extract_text_from_ipynb(absolute_file_path)
             return render_template('preview_ipynb.html', content=content)  # Use ipynb_preview.html template
