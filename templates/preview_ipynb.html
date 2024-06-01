@@ -2,135 +2,102 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IPython Notebook Preview with Floating Window</title>
-    <script src="https://cdn.jsdelivr.net/pyodide/v0.21.3/full/pyodide.js"></script>
+    <title>IPYNB Preview</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/material-darker.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/python/python.min.js"></script>
     <style>
-        /* Styling for the floating window */
-        .floating-window {
-            position: absolute;
-            top: 50px;
-            left: 50px;
-            width: 300px;
-            height: 400px;
-            background-color: #fff;
-            border: 1px solid #ccc;
-            z-index: 1000;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-        }
-
-        /* Styling for the window header */
-        .window-header {
-            background-color: #f0f0f0;
-            padding: 5px;
-            cursor: move;
-        }
-
-        /* Styling for the window content */
-        .window-content {
+        .code-cell, .markdown-cell {
+            border: 1px solid #ddd;
             padding: 10px;
-            height: calc(100% - 30px);
-            overflow: auto;
+            margin: 10px 0;
+            background-color: #f9f9f9;
         }
-
-        /* Styling for the Python console */
-        .python-console textarea {
-            width: 100%;
-            height: 80px;
-        }
-
-        .python-console .output {
-            width: 100%;
-            height: calc(100% - 110px);
-            overflow-y: auto;
-            background-color: #f8f8f8;
-            border-top: 1px solid #ccc;
-            padding: 5px;
+        .console {
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin: 20px 0;
+            background-color: #f1f1f1;
         }
     </style>
 </head>
 <body>
-    <!-- IPython Notebook Preview -->
-    <pre>{{ content }}</pre>
+    <h1>IPYNB Preview</h1>
+    {% for cell in notebook.cells %}
+        {% if cell.cell_type == 'markdown' %}
+            <div class="markdown-cell">
+                {{ cell.source | safe }}
+            </div>
+        {% elif cell.cell_type == 'code' %}
+            <div class="code-cell">
+                <textarea class="code-input">{{ cell.source }}</textarea>
+                <button class="run-code">Run</button>
+                <div class="output"></div>
+                <input type="text" class="user-input" placeholder="Enter input here (optional)">
+            </div>
+        {% endif %}
+    {% endfor %}
 
-    <!-- Floating window for Python console -->
-    <div class="floating-window" id="floatingWindow">
-        <div class="window-header" id="windowHeader">Python Console</div>
-        <div class="window-content python-console">
-            <textarea id="pythonInput" placeholder="Enter Python code here..."></textarea>
-            <button onclick="runPythonCode()">Run</button>
-            <div class="output" id="pythonOutput"></div>
-        </div>
+    <div class="console">
+        <h2>Interactive Python Console</h2>
+        <textarea id="code-input" rows="5" style="width: 100%;"></textarea>
+        <button id="run-button">Run Code</button>
+        <pre id="console-output"></pre>
+        <input type="text" id="user-input-console" placeholder="Enter input here (optional)">
     </div>
 
-    <!-- JavaScript for making the window draggable -->
     <script>
-        function dragElement(elmnt) {
-            var pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
-            if (elmnt.querySelector(".window-header")) {
-                elmnt.querySelector(".window-header").onmousedown = dragMouseDown;
-            } else {
-                elmnt.onmousedown = dragMouseDown;
-            }
-
-            function dragMouseDown(e) {
-                e = e || window.event;
-                e.preventDefault();
-                pos3 = e.clientX;
-                pos4 = e.clientY;
-                document.onmouseup = closeDragElement;
-                document.onmousemove = elementDrag;
-            }
-
-            function elementDrag(e) {
-                e = e || window.event;
-                e.preventDefault();
-                pos1 = pos3 - e.clientX;
-                pos2 = pos4 - e.clientY;
-                pos3 = e.clientX;
-                pos4 = e.clientY;
-                elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
-                elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
-            }
-
-            function closeDragElement() {
-                document.onmouseup = null;
-                document.onmousemove = null;
-            }
-        }
-
-        dragElement(document.getElementById("floatingWindow"));
-
-        // Initialize Pyodide
-        async function loadPyodideAndPackages() {
-            const pyodide = await loadPyodide({
-                indexURL: "https://cdn.jsdelivr.net/pyodide/v0.21.3/full/"
+        document.addEventListener('DOMContentLoaded', (event) => {
+            document.querySelectorAll('.code-input').forEach((textarea) => {
+                CodeMirror.fromTextArea(textarea, {
+                    mode: 'python',
+                    theme: 'material-darker',
+                    lineNumbers: true,
+                    indentUnit: 4,
+                    matchBrackets: true
+                });
             });
-            return pyodide;
-        }
 
-        let pyodideReadyPromise = loadPyodideAndPackages();
+            document.querySelectorAll('.run-code').forEach((button) => {
+                button.addEventListener('click', function() {
+                    const code = this.previousElementSibling.CodeMirror.getValue();
+                    const outputDiv = this.nextElementSibling;
+                    const userInput = this.nextElementSibling.nextElementSibling.value;
 
-        // Function to run Python code using Pyodide
-        async function runPythonCode() {
-            const input = document.getElementById("pythonInput").value;
-            const output = document.getElementById("pythonOutput");
-            output.innerHTML = '';  // Clear previous output
+                    $.ajax({
+                        url: '/run_python',
+                        method: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify({ code: code, input: userInput }),
+                        success: function(response) {
+                            outputDiv.textContent = response.output || response.error;
+                        },
+                        error: function() {
+                            outputDiv.textContent = 'Error executing code.';
+                        }
+                    });
+                });
+            });
 
-            try {
-                const pyodide = await pyodideReadyPromise;
-                const result = await pyodide.runPythonAsync(input);
-                output.innerHTML = `<pre>${result}</pre>`;
-            } catch (e) {
-                output.innerHTML = `<pre style="color: red;">${e}</pre>`;
-            }
-        }
+            document.getElementById('run-button').addEventListener('click', function() {
+                const code = document.getElementById('code-input').value;
+                const userInput = document.getElementById('user-input-console').value;
 
-        // Debugging: Check if Pyodide is ready
-        pyodideReadyPromise.then(() => {
-            console.log("Pyodide is ready");
-        }).catch((error) => {
-            console.error("Error loading Pyodide:", error);
+                $.ajax({
+                    url: '/run_python',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ code: code, input: userInput }),
+                    success: function(response) {
+                        document.getElementById('console-output').textContent = response.output || response.error;
+                    },
+                    error: function() {
+                        document.getElementById('console-output').textContent = 'Error executing code.';
+                    }
+                });
+            });
         });
     </script>
 </body>

@@ -9,12 +9,15 @@ import fitz  # PyMuPDF
 import shutil
 from jinja2 import Environment, FileSystemLoader, select_autoescape, Undefined
 import nbformat
+from jupyter_client import KernelManager
 
 app = Flask(__name__, static_url_path='/static', static_folder='static')
 app.config['UPLOAD_FOLDER'] = os.path.abspath('templates/uploads')
 app.secret_key = 'supersecretkey'
 file_index = {}
 
+#global dictionary to store variables
+execution_environment = {}
 # Create a custom Jinja environment with enumerate function available
 custom_env = Environment(
     loader=FileSystemLoader('templates'),
@@ -217,7 +220,6 @@ def open_file(file_path):
     # Replace backslashes with forward slashes in the file path
     file_path = file_path.replace("\\", "/")
 
-    # Update this line to replace backslashes with forward slashes in the file path
     absolute_file_path = os.path.abspath(
         os.path.join(app.config['UPLOAD_FOLDER'], file_path.replace('\\', '/')))
     print(f"Opening file: {absolute_file_path}")
@@ -236,8 +238,9 @@ def open_file(file_path):
                 content = mammoth.extract_raw_text(f).value
             return render_template('preview_docx.html', content=content)
         elif file_extension == 'ipynb':
-            content = extract_text_from_ipynb(absolute_file_path)
-            return render_template('preview_ipynb.html', content=content)  # Use ipynb_preview.html template
+            with open(absolute_file_path, 'r', encoding='utf-8') as f:
+                notebook = nbformat.read(f, as_version=4)
+            return render_template('preview_ipynb.html', notebook=notebook)  # Use notebook variable
         else:
             mime_type, _ = mimetypes.guess_type(absolute_file_path)
             if mime_type is not None:
@@ -258,6 +261,18 @@ def open_file(file_path):
     else:
         return "File not found", 404
 
+
+# New route for previewing IPYNB files
+@app.route('/preview_ipynb/<path:file_path>', methods=['GET'])
+def preview_ipynb(file_path):
+    absolute_file_path = os.path.abspath(os.path.join(app.config['UPLOAD_FOLDER'], file_path))
+    if os.path.exists(absolute_file_path):
+        with open(absolute_file_path, 'r', encoding='utf-8') as f:
+            notebook = nbformat.read(f, as_version=4)
+        print(notebook)  # Debug: Print the notebook content
+        return render_template('preview_ipynb.html', notebook=notebook)
+    else:
+        return "File not found", 404
 
 @app.route('/upload', methods=['POST'])
 def upload():
@@ -319,18 +334,39 @@ def save_slides_by_category(slides_content, category_path):
 
 @app.route('/run_python', methods=['POST'])
 def run_python():
+    global execution_environment
     code = request.json.get('code', '')
+    user_input = request.json.get('input', '')
+
     try:
-        # Run the code in a subprocess and capture the output
-        result = subprocess.run(['python', '-c', code], capture_output=True, text=True, check=True)
-        output = result.stdout
-        error = result.stderr
-    except subprocess.CalledProcessError as e:
-        output = e.stdout
-        error = e.stderr
+        # Prepare to run the code in a subprocess with user input
+        output_buffer = io.StringIO()
+        error_buffer = io.StringIO()
+
+        # Redirect stdout and stderr to capture the output
+        with redirect_stdout(output_buffer), redirect_stderr(error_buffer):
+            # Execute the code within the shared environment
+            exec(code, execution_environment)
+
+        output = output_buffer.getvalue()
+        error = error_buffer.getvalue()
+    except Exception as e:
+        output = ''
+        error = str(e)
 
     return jsonify({'output': output, 'error': error})
-
+@app.route('/execute_code', methods=['POST'])
+def execute_code():
+    code = request.json.get('code', '')
+    kernel_manager = KernelManager()
+    kernel_manager.start_kernel()
+    kernel_client = kernel_manager.client()
+    kernel_client.start_channels()
+    kernel_client.execute_interactive(code)
+    reply = kernel_client.get_shell_msg(timeout=5)
+    result = reply['content']
+    kernel_manager.shutdown_kernel()
+    return jsonify(result)
 
 if __name__ == '__main__':
     index_files(app.config['UPLOAD_FOLDER'])  # Index files on startup
