@@ -4,7 +4,7 @@ pipeline {
     environment {
         // Define any environment variables you need here
         GIT_REPO_URL = 'https://github.com/cerform/project-int'
-        BRANCH_NAME = 'master'
+        BRANCH_NAME = 'main'
     }
 
     stages {
