@@ -1,15 +1,16 @@
-import os
+import io
 import mimetypes
-import subprocess
-from flask import Flask, render_template, request, redirect, url_for, flash, send_file, jsonify
-from werkzeug.utils import secure_filename
-import mammoth
-from pptx import Presentation
-import fitz  # PyMuPDF
+import os
 import shutil
-from jinja2 import Environment, FileSystemLoader, select_autoescape, Undefined
+
+import fitz  # PyMuPDF
+import mammoth
 import nbformat
+from flask import Flask, render_template, request, redirect, url_for, flash, send_file, jsonify
+from jinja2 import Environment, FileSystemLoader, select_autoescape, Undefined
 from jupyter_client import KernelManager
+from pptx import Presentation
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__, static_url_path='/static', static_folder='static')
 app.config['UPLOAD_FOLDER'] = os.path.abspath('templates/uploads')
@@ -334,19 +335,16 @@ def save_slides_by_category(slides_content, category_path):
 
 @app.route('/run_python', methods=['POST'])
 def run_python():
-    global execution_environment
     code = request.json.get('code', '')
-    user_input = request.json.get('input', '')
-
     try:
-        # Prepare to run the code in a subprocess with user input
+        # Prepare to run the code in a subprocess
         output_buffer = io.StringIO()
         error_buffer = io.StringIO()
 
         # Redirect stdout and stderr to capture the output
         with redirect_stdout(output_buffer), redirect_stderr(error_buffer):
-            # Execute the code within the shared environment
-            exec(code, execution_environment)
+            # Execute the code
+            exec(code)
 
         output = output_buffer.getvalue()
         error = error_buffer.getvalue()

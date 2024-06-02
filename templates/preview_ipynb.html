@@ -31,12 +31,12 @@
                 {{ cell.source | safe }}
             </div>
         {% elif cell.cell_type == 'code' %}
-            <div class="code-cell">
-                <textarea class="code-input">{{ cell.source }}</textarea>
-                <button class="run-code">Run</button>
-                <div class="output"></div>
-                <input type="text" class="user-input" placeholder="Enter input here (optional)">
-            </div>
+<div class="code-cell">
+    <textarea class="code-input">{{ cell.source }}</textarea>
+    <button class="run-code">Run</button>
+    <div class="output"></div> <!-- Display output here -->
+    <input type="text" class="user-input" placeholder="Enter input here (optional)">
+</div>
         {% endif %}
     {% endfor %}
 
@@ -49,56 +49,59 @@
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', (event) => {
-            document.querySelectorAll('.code-input').forEach((textarea) => {
-                CodeMirror.fromTextArea(textarea, {
-                    mode: 'python',
-                    theme: 'material-darker',
-                    lineNumbers: true,
-                    indentUnit: 4,
-                    matchBrackets: true
-                });
-            });
+document.addEventListener('DOMContentLoaded', (event) => {
+    document.querySelectorAll('.code-input').forEach((textarea) => {
+        CodeMirror.fromTextArea(textarea, {
+            mode: 'python',
+            theme: 'material-darker',
+            lineNumbers: true,
+            indentUnit: 4,
+            matchBrackets: true
+        });
+    });
 
-            document.querySelectorAll('.run-code').forEach((button) => {
-                button.addEventListener('click', function() {
-                    const code = this.previousElementSibling.CodeMirror.getValue();
-                    const outputDiv = this.nextElementSibling;
-                    const userInput = this.nextElementSibling.nextElementSibling.value;
+    document.querySelectorAll('.run-code').forEach((button) => {
+        button.addEventListener('click', function() {
+            const code = this.previousElementSibling.CodeMirror.getValue();
+            const outputDiv = this.nextElementSibling.querySelector('.output');
+            const userInput = this.nextElementSibling.querySelector('.user-input').value;
 
-                    $.ajax({
-                        url: '/run_python',
-                        method: 'POST',
-                        contentType: 'application/json',
-                        data: JSON.stringify({ code: code, input: userInput }),
-                        success: function(response) {
-                            outputDiv.textContent = response.output || response.error;
-                        },
-                        error: function() {
-                            outputDiv.textContent = 'Error executing code.';
-                        }
-                    });
-                });
-            });
-
-            document.getElementById('run-button').addEventListener('click', function() {
-                const code = document.getElementById('code-input').value;
-                const userInput = document.getElementById('user-input-console').value;
-
-                $.ajax({
-                    url: '/run_python',
-                    method: 'POST',
-                    contentType: 'application/json',
-                    data: JSON.stringify({ code: code, input: userInput }),
-                    success: function(response) {
-                        document.getElementById('console-output').textContent = response.output || response.error;
-                    },
-                    error: function() {
-                        document.getElementById('console-output').textContent = 'Error executing code.';
-                    }
-                });
+            $.ajax({
+                url: '/run_python',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ code: code, input: userInput }),
+                success: function(response) {
+                    outputDiv.textContent = response.output || response.error;
+                    console.log(response.output || response.error); // Print output to console
+                },
+                error: function() {
+                    outputDiv.textContent = 'Error executing code.';
+                }
             });
         });
+    });
+
+    document.getElementById('run-button').addEventListener('click', function() {
+        const code = document.getElementById('code-input').value;
+        const userInput = document.getElementById('user-input-console').value;
+
+        $.ajax({
+            url: '/run_python',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ code: code, input: userInput }),
+            success: function(response) {
+                document.getElementById('console-output').textContent = response.output || response.error;
+                console.log(response.output || response.error); // Print output to console
+            },
+            error: function() {
+                document.getElementById('console-output').textContent = 'Error executing code.';
+            }
+        });
+    });
+});
+
     </script>
 </body>
 </html>
