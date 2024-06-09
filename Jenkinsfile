@@ -18,7 +18,13 @@ pipeline {
             steps {
                 // Commands to build your project
                 echo 'Building the project...'
-                sh 'your-build-command-here' // Replace with your actual build command
+                script {
+                    if (isUnix()) {
+                        sh 'your-build-command-here' // Replace with your actual build command
+                    } else {
+                        bat 'your-build-command-here' // Replace with your actual build command
+                    }
+                }
             }
         }
 
@@ -26,7 +32,13 @@ pipeline {
             steps {
                 // Commands to run tests
                 echo 'Running tests...'
-                sh 'your-test-command-here' // Replace with your actual test command
+                script {
+                    if (isUnix()) {
+                        sh 'your-test-command-here' // Replace with your actual test command
+                    } else {
+                        bat 'your-test-command-here' // Replace with your actual test command
+                    }
+                }
             }
         }
 
@@ -34,7 +46,13 @@ pipeline {
             steps {
                 // Commands to deploy your project
                 echo 'Deploying the application...'
-                sh 'your-deploy-command-here' // Replace with your actual deploy command
+                script {
+                    if (isUnix()) {
+                        sh 'your-deploy-command-here' // Replace with your actual deploy command
+                    } else {
+                        bat 'your-deploy-command-here' // Replace with your actual deploy command
+                    }
+                }
             }
         }
 
@@ -42,9 +60,9 @@ pipeline {
             steps {
                 script {
                     if (isUnix()) {
-                        sh 'nohup java -jar myapp.jar &'
+                        sh 'nohup java -jar myapp.jar &' // For Unix-based systems
                     } else {
-                        bat 'start /B java -jar myapp.jar'
+                        bat 'start /B java -jar myapp.jar' // For Windows systems
                     }
                 }
             }
