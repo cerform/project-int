@@ -12,39 +12,13 @@ pipeline {
             steps {
                 // Ensure Python and pip are installed, and install dependencies
                 echo 'Setting up the environment...'
-                bat 'python --version'
-                bat 'pip --version'
-                bat 'pip install -r requirements.txt'
+                bat 'echo %PATH%' // Print the current PATH to the console for debugging
+                bat '"C:\\Users\\imse\\AppData\\Local\\Programs\\Python\\Python312\\python.exe" --version'
+                bat '"C:\\Users\\imse\\AppData\\Local\\Programs\\Python\\Python312\\Scripts\\pip.exe" --version'
+                bat '"C:\\Users\\imse\\AppData\\Local\\Programs\\Python\\Python312\\Scripts\\pip.exe" install -r requirements.txt'
             }
         }
-        stage('Build') {
-            steps {
-                // Example build step
-                echo 'Building the project...'
-                // Add actual build commands here
-            }
-        }
-        stage('Test') {
-            steps {
-                // Run tests using pytest
-                echo 'Running tests...'
-                bat 'pytest'
-            }
-        }
-        stage('Deploy') {
-            steps {
-                // Deployment steps
-                echo 'Deploying the application...'
-                // Add actual deployment commands here
-            }
-        }
-        stage('Run Application') {
-            steps {
-                // Run the application
-                echo 'Running the application...'
-                // Add commands to run the application here
-            }
-        }
+        // Other stages...
     }
 
     post {
