@@ -37,6 +37,18 @@ pipeline {
                 sh 'your-deploy-command-here' // Replace with your actual deploy command
             }
         }
+
+        stage('Run Application') {
+            steps {
+                script {
+                    if (isUnix()) {
+                        sh 'nohup java -jar myapp.jar &'
+                    } else {
+                        bat 'start /B java -jar myapp.jar'
+                    }
+                }
+            }
+        }
     }
 
     post {
