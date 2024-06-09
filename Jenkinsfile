@@ -1,70 +1,45 @@
 pipeline {
     agent any
 
-    environment {
-        // Define any environment variables you need here
-        GIT_REPO_URL = 'https://github.com/cerform/project-int'
-        BRANCH_NAME = 'main'
-    }
-
     stages {
         stage('Checkout') {
             steps {
-                git branch: "${BRANCH_NAME}", url: "${GIT_REPO_URL}"
+                git 'https://github.com/cerform/project-int'
             }
         }
-
+        stage('Setup') {
+            steps {
+                echo 'Setting up the environment...'
+                // Ensure Python and pip are installed
+                bat 'python --version'
+                bat 'pip --version'
+                // Install dependencies
+                bat 'pip install -r requirements.txt'
+            }
+        }
         stage('Build') {
             steps {
-                // Commands to build your project
                 echo 'Building the project...'
-                script {
-                    if (isUnix()) {
-                        sh 'your-build-command-here' // Replace with your actual build command
-                    } else {
-                        bat 'your-build-command-here' // Replace with your actual build command
-                    }
-                }
+                // Add any build steps if necessary, for example:
+                // bat 'python setup.py build'
             }
         }
-
         stage('Test') {
             steps {
-                // Commands to run tests
                 echo 'Running tests...'
-                script {
-                    if (isUnix()) {
-                        sh 'your-test-command-here' // Replace with your actual test command
-                    } else {
-                        bat 'your-test-command-here' // Replace with your actual test command
-                    }
-                }
+                bat 'pytest'
             }
         }
-
         stage('Deploy') {
             steps {
-                // Commands to deploy your project
                 echo 'Deploying the application...'
-                script {
-                    if (isUnix()) {
-                        sh 'your-deploy-command-here' // Replace with your actual deploy command
-                    } else {
-                        bat 'your-deploy-command-here' // Replace with your actual deploy command
-                    }
-                }
+                // Add the deploy command here if applicable
             }
         }
-
         stage('Run Application') {
             steps {
-                script {
-                    if (isUnix()) {
-                        sh 'nohup java -jar myapp.jar &' // For Unix-based systems
-                    } else {
-                        bat 'start /B java -jar myapp.jar' // For Windows systems
-                    }
-                }
+                echo 'Running the application...'
+                // Add the run command here if applicable
             }
         }
     }
@@ -72,13 +47,13 @@ pipeline {
     post {
         always {
             echo 'Cleaning up...'
-            cleanWs() // Clean the workspace after the build
-        }
-        success {
-            echo 'Build succeeded!'
+            cleanWs()
         }
         failure {
             echo 'Build failed!'
+        }
+        success {
+            echo 'Build succeeded!'
         }
     }
 }
