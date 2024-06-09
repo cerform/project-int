@@ -13,7 +13,7 @@ pipeline {
                         bat '''
                             echo $USERPASS | docker login -u %USERNAME% --password-stdin
                             docker build -t %IMG_NAME% .
-                            docker tag $IMG_NAME etcsys/%IMG_NAME%
+                            docker tag %IMG_NAME% etcsys/%IMG_NAME%
                             docker push etcsys/%IMG_NAME%
                         '''
                     }
