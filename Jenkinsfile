@@ -10,11 +10,11 @@ pipeline {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'USERNAME', passwordVariable: 'USERPASS')]) {
                     script {
-                        sh '''
-                            echo $USERPASS | docker login -u $USERNAME --password-stdin
-                            docker build -t $IMG_NAME .
-                            docker tag $IMG_NAME etcsys/$IMG_NAME
-                            docker push etcsys/$IMG_NAME
+                        bat '''
+                            echo $USERPASS | docker login -u %USERNAME% --password-stdin
+                            docker build -t %IMG_NAME% .
+                            docker tag $IMG_NAME etcsys/%IMG_NAME%
+                            docker push etcsys/%IMG_NAME%
                         '''
                     }
                 }
