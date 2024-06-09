@@ -13,9 +13,9 @@ pipeline {
                 // Ensure Python and pip are installed, and install dependencies
                 echo 'Setting up the environment...'
                 bat 'echo %PATH%' // Print the current PATH to the console for debugging
-                bat '"C:\\Users\\imse\\AppData\\Local\\Programs\\Python\\Python312\\python.exe" --version'
-                bat '"C:\\Users\\imse\\AppData\\Local\\Programs\\Python\\Python312\\Scripts\\pip.exe" --version'
-                bat '"C:\\Users\\imse\\AppData\\Local\\Programs\\Python\\Python312\\Scripts\\pip.exe" install -r requirements.txt'
+                bat '"E:\\Dev_Ops\\etcsys\\project-int\\python.exe" --version'
+                bat '"E:\\Dev_Ops\\etcsys\\project-int\\Scripts\\pip.exe" --version'
+                bat '"E:\\Dev_Ops\\etcsys\\project-int\\Scripts\\pip.exe" install -r requirements.txt'
             }
         }
         // Other stages...
