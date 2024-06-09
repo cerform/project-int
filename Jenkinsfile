@@ -1,39 +1,24 @@
 pipeline {
     agent any
 
-    stages {
-        stage('Checkout') {
-            steps {
-                // Check out the main branch
-                git url: 'https://github.com/cerform/project-int', branch: 'main'
-            }
-        }
-        stage('Setup') {
-            steps {
-                // Ensure Python and pip are installed, and install dependencies
-                echo 'Setting up the environment...'
-                bat 'echo %PATH%' // Print the current PATH to the console for debugging
-                bat 'python_env\\python.exe --version'
-                bat 'python_env\\Scripts\\pip.exe --version'
-                bat 'python_env\\Scripts\\pip.exe install -r requirements.txt'
-            }
-        }
-        // Other stages...
+    environment {
+        IMG_NAME = "Jenkinsfile:${BUILD_NUMBER}"
     }
 
-    post {
-        always {
-            // Clean up workspace
-            echo 'Cleaning up...'
-            cleanWs()
-        }
-        failure {
-            // Log build failure
-            echo 'Build failed!'
-        }
-        success {
-            // Log build success
-            echo 'Build succeeded!'
+    stages {
+        stage('Build docker image') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'USERNAME', passwordVariable: 'USERPASS')]) {
+                    sh '''
+                        echo $USERPASS | docker login -u $USERNAME --password-stdin
+                        docker build -t $IMG_NAME .
+                        docker tag $IMG_NAME etcsys/$IMG_NAME
+                        docker push etcsys/$IMG_NAME
+                    '''
+                }
+            }
         }
     }
 }
+
+echo "test1"
