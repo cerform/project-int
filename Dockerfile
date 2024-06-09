@@ -1,4 +1,8 @@
-FROM ubuntu:latest
-LABEL authors="imse"
+FROM python:3.12.2
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-ENTRYPOINT ["top", "-b"]
+COPY . .
+
+CMD ["python3", "app.py"]
