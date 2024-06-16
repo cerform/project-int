@@ -6,8 +6,24 @@
     <title>PPTX Preview</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"> <!-- Font Awesome CSS -->
     <style>
+        body {
+            margin-top: 200px;
+            background-color: #101416;
+            color: white;
+        }
+
+        body h1 {
+            padding-left: 5px;
+            padding-right: 5px;
+            margin-left: 866px;
+            margin-right: 866px;
+            background-color: #0069d9;
+        }
+
         /* Container for the presentation area */
         .presentation-container {
+            background-color: white;
+            color: black;
             width: 800px; /* Set a fixed width for the presentation area */
             height: 600px; /* Set a fixed height for the presentation area */
             overflow: hidden; /* Hide overflow content */
@@ -41,16 +57,60 @@
 
         /* Icon buttons */
         .icon-btn {
-            background: none;
+            background: transparent;
             border: none;
             cursor: pointer;
             font-size: 20px;
             padding: 5px;
         }
+
+
+        .Preview-title {
+             display: flex;
+             justify-content: center; /* Horizontal centering */
+             align-items: center;     /* Vertical centering */
+        }
+
+        .BtnCenter {
+            padding-top: 20px;
+            position: absolute;
+            margin-left: 47%;
+        }
+
+        .BtnCenter2 {
+            padding-top: 20px;
+            position: absolute;
+            margin-top: 10px;
+            margin-left: 47%;
+            padding: 5px;
+            background-color: white;
+        }
+
+        .pre-btn-center {
+            position: absolute;
+            bottom: 55%;
+            margin-left: 800px;
+        }
+
+        .next-btn-center {
+            position: absolute;
+            bottom: 55%;
+            margin-left: 1680px;
+        }
+
+        /* Remove background from PNG images */
+        .icon-btn img {
+            width: 170%;  /* Adjust as needed */
+            height: 170%; /* Adjust as needed */
+            object-fit: contain; /* Ensure the image fits within the button */
+            background: transparent; /* Ensure the background is transparent */
+            display: block; /* Ensure the image is displayed as a block element */
+        }
+
     </style>
 </head>
 <body>
-    <h1>PPTX Preview</h1>
+    <h1 class="Preview-title">PPTX Preview</h1>
 
     <!-- Container for the presentation area -->
     <div class="presentation-container">
@@ -76,12 +136,24 @@
         </div>
     </div>
 
-    <!-- Slideshow controls with icons -->
-    <button id="prevSlideBtn" class="icon-btn"><i class="fas fa-chevron-left"></i></button>
-    <button id="nextSlideBtn" class="icon-btn"><i class="fas fa-chevron-right"></i></button>
-    <button id="startSlideshowBtn" class="icon-btn"><i class="fas fa-play"></i></button>
-    <button id="stopSlideshowBtn" class="icon-btn"><i class="fas fa-pause"></i></button>
+    <div class="pre-btn-center">
+        <button id="prevSlideBtn1" class="icon-btn prev-btn">
+            <img src="{{ url_for('static', filename='prev_icon.png') }}" alt="Previous">
+        </button>
+    </div>
 
+    <div class="next-btn-center">
+        <button id="nextSlideBtn2" class="icon-btn next-btn">
+            <img src="{{ url_for('static', filename='next_icon.png') }}" alt="Next">
+        </button>
+    </div>
+
+    <div class="BtnCenter2"> <!-- Slideshow controls with icons -->
+        <button id="prevSlideBtn" class="icon-btn"><i class="fas fa-chevron-left"></i></button>
+        <button id="nextSlideBtn" class="icon-btn"><i class="fas fa-chevron-right"></i></button>
+        <button id="startSlideshowBtn" class="icon-btn"><i class="fas fa-play"></i></button>
+        <button id="stopSlideshowBtn" class="icon-btn"><i class="fas fa-pause"></i></button>
+    </div>
     <script src="https://kit.fontawesome.com/a076d05399.js"></script> <!-- Font Awesome JS -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -142,6 +214,16 @@
 
             // Show the first slide initially
             showSlide(currentIndex);
+
+            // Event listener for previous slide button
+            document.getElementById('prevSlideBtn1').addEventListener('click', function() {
+                prevSlide();
+            });
+
+            // Event listener for next slide button
+            document.getElementById('nextSlideBtn2').addEventListener('click', function() {
+                nextSlide();
+            });
         });
     </script>
 </body>

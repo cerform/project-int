@@ -1,3 +1,6 @@
+
+import os
+from contextlib import redirect_stdout, redirect_stderr
 import io
 import mimetypes
 import os
@@ -237,7 +240,7 @@ def open_file(file_path):
         elif file_extension == 'docx':
             with open(absolute_file_path, 'rb') as f:
                 content = mammoth.extract_raw_text(f).value
-            return render_template('preview_text.html', content=content)
+            return render_template('preview_docx.html', content=content)
         elif file_extension == 'ipynb':
             with open(absolute_file_path, 'r', encoding='utf-8') as f:
                 notebook = nbformat.read(f, as_version=4)
@@ -370,4 +373,4 @@ if __name__ == '__main__':
     index_files(app.config['UPLOAD_FOLDER'])  # Index files on startup
     app.run(debug=True)
 
-
+#style updated#
