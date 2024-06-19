@@ -1,0 +1,18 @@
+{
+  "name": "search engine",
+  "version": "1.0.0",
+  "description": "Web App for Searching files by keywords",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cerform/project-int.git"
+  },
+  "author": "etcsys",
+  "license": "ISC",
+  "dependencies": {
+
+  }
+}
