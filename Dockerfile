@@ -1,8 +1,11 @@
-FROM python:3.12.2
-WORKDIR /app
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Use the latest LTS Jenkins agent image as base
+FROM jenkins/inbound-agent:4.10-1-alpine
 
-COPY . .
+# Switch to root user for installation
+USER root
 
-CMD ["python3", "app.py"]
+# Install Docker CLI
+RUN apk add --no-cache docker
+
+# Switch back to the Jenkins user
+USER jenkins
