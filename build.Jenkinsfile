@@ -13,17 +13,17 @@ pipeline {
                     script {
                         // Build and push Python app image
                         sh '''
-                            echo $USERPASS | docker login -u $USERNAME --password-stdin
-                            docker build -t $PYTHON_IMG_NAME -f Dockerfile.python .
-                            docker tag $PYTHON_IMG_NAME exaclly/$PYTHON_IMG_NAME
+                            echo %USERPASS | docker login -u %USERNAME --password-stdin
+                            docker build -t %PYTHON_IMG_NAME -f Dockerfile.python .
+                            docker tag %PYTHON_IMG_NAME exaclly/%PYTHON_IMG_NAME
                             docker push exaclly/$PYTHON_IMG_NAME
                         '''
                         // Build and push Nginx image
                         sh '''
                             echo $USERPASS | docker login -u $USERNAME --password-stdin
-                            docker build -t $NGINX_IMG_NAME -f Dockerfile.nginx .
-                            docker tag $NGINX_IMG_NAME exaclly/$NGINX_IMG_NAME
-                            docker push exaclly/$NGINX_IMG_NAME
+                            docker build -t %NGINX_IMG_NAME -f Dockerfile.nginx .
+                            docker tag $NGINX_IMG_NAME exaclly/%NGINX_IMG_NAME
+                            docker push exaclly/%NGINX_IMG_NAME
                         '''
                     }
                 }
