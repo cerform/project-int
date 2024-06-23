@@ -1,11 +1,20 @@
-# Use the latest LTS Jenkins agent image as base
-FROM jenkins/inbound-agent:4.10-1-alpine
+# Use an official Python runtime as a parent image
+FROM python:3.9-slim
 
-# Switch to root user for installation
-USER root
+# Set the working directory in the container
+WORKDIR /app
 
-# Install Docker CLI
-RUN apk add --no-cache docker
+# Copy the current directory contents into the container at /app
+COPY . /app
 
-# Switch back to the Jenkins user
-USER jenkins
+# Install any needed packages specified in requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Make port 80 available to the world outside this container
+EXPOSE 80
+
+# Define environment variable
+ENV NAME World
+
+# Run app.py when the container launches
+CMD ["python", "app.py"]
