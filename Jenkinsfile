@@ -2,46 +2,47 @@ pipeline {
     agent any
 
     environment {
-        DOCKERHUB_CREDENTIALS = credentials('docker-hub-credentials-id')
+        DOCKER_REGISTRY = 'docker.io/etcsys'
+        DOCKER_CREDENTIALS_ID = 'docker-hub-credentials'
+        IMAGE_NAME = 'project-int'
     }
 
     stages {
-        stage('Checkout') {
+        stage('Clone Repository') {
             steps {
-                git branch: 'main', url: 'https://github.com/cerform/project-int.git'
+                git 'https://github.com/cerform/project-int.git'
             }
         }
-
+        stage('Install Dependencies') {
+            steps {
+                sh 'pip install -r requirements.txt'
+            }
+        }
+        stage('Run Tests') {
+            steps {
+                sh 'pytest --junitxml=report.xml'
+                junit 'report.xml'
+            }
+        }
         stage('Build Docker Image') {
             steps {
                 script {
-                    dockerImage = docker.build("myusername/project-int:${env.BUILD_ID}")
+                    def imageTag = "latest"
+                    sh "docker build -t ${DOCKER_REGISTRY}/${IMAGE_NAME}:${imageTag} ."
                 }
             }
         }
-
-        stage('Run Tests') {
-            steps {
-                script {
-                    dockerImage.inside {
-                        sh 'python -m unittest discover'
-                    }
-                }
-            }
-        }
-
         stage('Push Docker Image') {
             steps {
                 script {
-                    docker.withRegistry('https://index.docker.io/v1/', 'DOCKERHUB_CREDENTIALS') {
-                        dockerImage.push("${env.BUILD_ID}")
-                        dockerImage.push("latest")
+                    docker.withRegistry('https://index.docker.io/v1/', DOCKER_CREDENTIALS_ID) {
+                        def imageTag = "latest"
+                        sh "docker push ${DOCKER_REGISTRY}/${IMAGE_NAME}:${imageTag}"
                     }
                 }
             }
         }
     }
-
     post {
         always {
             cleanWs()
