@@ -15,5 +15,5 @@ CMD ["nginx", "-g", "daemon off;"]
 
 server {
     listen 80;
-    server_name  https://08c7-213-137-72-0.ngrok-free.app;
+    server_name   https://08c7-213-137-72-0.ngrok-free.app;
 }

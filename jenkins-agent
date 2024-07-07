@@ -1,23 +1,23 @@
 pipeline {
-    agent {
-        docker {
-            image '<etcsys>/<jenkins-agent>:<tag>'
-            args '--user root -v /var/run/docker.sock:/var/run/docker.sock'
-        }
+    agent any  // Use 'any' or specify a specific label here if needed
+
+    environment {
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')
     }
+
     stages {
         stage('Build app') {
+            agent {
+                docker {
+                    image 'etcsys/jenkins-agent:latest'
+                    args '--user root -v /var/run/docker.sock:/var/run/docker.sock'
+                }
+            }
             steps {
                 script {
-                    docker.withRegistry('https://registry.hub.docker.com', 'dockerhub-credentials') {
-                        // Login to Docker Hub
-                        docker.login(username: '<etcsys>', password: '<055658273>')
-
+                    docker.withRegistry('', DOCKERHUB_CREDENTIALS) {
                         // Build and push your app image
-                        docker.build('<etcsys>/<jenkins-agent>')
-                        docker.withRegistry([url: 'https://registry.hub.docker.com', credentialsId: 'dockerhub-credentials']) {
-                            docker.image('<etcsys>/<jenkins-agent>').push()
-                        }
+                        docker.build('etcsys/jenkins-agent').push()
                     }
                 }
             }
