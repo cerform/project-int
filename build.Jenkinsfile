@@ -4,7 +4,7 @@ pipeline {
     environment {
         PYTHON_IMG_NAME = "python-app:${BUILD_NUMBER}"
         NGINX_IMG_NAME = "nginx-static:${BUILD_NUMBER}"
-        DOCKER_REGISTRY = "exaclly"
+        DOCKER_REGISTRY = "etcsys"
     }
 
     stages {
