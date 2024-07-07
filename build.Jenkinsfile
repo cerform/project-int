@@ -10,7 +10,7 @@ pipeline {
     stages {
         stage('Build Docker Images') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'USERNAME', passwordVariable: 'USERPASS')]) {
+                withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'etcsys', passwordVariable: '055658273')]) {
                     script {
                         // Build and push Python app image
                         sh '''
