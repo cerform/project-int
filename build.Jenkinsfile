@@ -10,14 +10,10 @@ pipeline {
     stages {
         stage('Build Docker Images') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'etcsys', passwordVariable: '055658273')]) {
+                withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'USERNAME', passwordVariable: 'USERPASS')]) {
                     script {
                         // Build and push Python app image
                         sh '''
-                            export DOCKER_REGISTRY=${DOCKER_REGISTRY}
-                            export USERPASS=${USERPASS}
-                            export USERNAME=${USERNAME}
-                            export PYTHON_IMG_NAME=${PYTHON_IMG_NAME}
                             echo $USERPASS | docker login -u $USERNAME --password-stdin
                             docker build -t $PYTHON_IMG_NAME -f Dockerfile.python .
                             docker tag $PYTHON_IMG_NAME $DOCKER_REGISTRY/$PYTHON_IMG_NAME
@@ -25,10 +21,6 @@ pipeline {
                         '''
                         // Build and push Nginx image
                         sh '''
-                            export DOCKER_REGISTRY=${DOCKER_REGISTRY}
-                            export USERPASS=${USERPASS}
-                            export USERNAME=${USERNAME}
-                            export NGINX_IMG_NAME=${NGINX_IMG_NAME}
                             echo $USERPASS | docker login -u $USERNAME --password-stdin
                             docker build -t $NGINX_IMG_NAME -f Dockerfile.nginx .
                             docker tag $NGINX_IMG_NAME $DOCKER_REGISTRY/$NGINX_IMG_NAME
@@ -45,17 +37,11 @@ pipeline {
                     script {
                         // Scan Python app image
                         sh '''
-                            export SNYK_TOKEN=${SNYK_TOKEN}
-                            export DOCKER_REGISTRY=${DOCKER_REGISTRY}
-                            export PYTHON_IMG_NAME=${PYTHON_IMG_NAME}
                             snyk auth $SNYK_TOKEN
                             snyk container test $DOCKER_REGISTRY/$PYTHON_IMG_NAME
                         '''
                         // Scan Nginx image
                         sh '''
-                            export SNYK_TOKEN=${SNYK_TOKEN}
-                            export DOCKER_REGISTRY=${DOCKER_REGISTRY}
-                            export NGINX_IMG_NAME=${NGINX_IMG_NAME}
                             snyk auth $SNYK_TOKEN
                             snyk container test $DOCKER_REGISTRY/$NGINX_IMG_NAME
                         '''
