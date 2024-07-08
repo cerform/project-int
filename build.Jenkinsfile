@@ -5,7 +5,7 @@ pipeline {
         PYTHON_IMG_NAME = "python-app:${BUILD_NUMBER}"
         NGINX_IMG_NAME = "nginx-static:${BUILD_NUMBER}"
         DOCKER_REGISTRY = "etcsys"
-        SSH_PRIVATE_KEY = credentials('c9e48fbe-2820-4f9b-8bf4-36ab119f3e31') // Replace with your SSH private key credentials ID
+        SSH_PRIVATE_KEY = credentials('c9e48fbe-2820-4f9b-8bf4-36ab119f3e31')
     }
 
     stages {
@@ -34,9 +34,17 @@ pipeline {
 
         stage('Update Dependencies') {
             steps {
+<<<<<<< HEAD
                 // Run apt-get update with SSH agent
                 sshagent(['c9e48fbe-2820-4f9b-8bf4-36ab119f3e31']) { // Use your SSH private key credentials ID here
                     sh 'sudo apt-get update'
+=======
+                script {
+                    // Run apt-get update with SSH
+                    sshagent(['c9e48fbe-2820-4f9b-8bf4-36ab119f3e31']) {
+                        sh 'sudo apt-get update'
+                    }
+>>>>>>> origin/main
                 }
             }
         }
