@@ -31,53 +31,40 @@ pipeline {
             }
         }
 
+        stage('Update Dependencies') {
+            steps {
+                script {
+                    // Commands to update dependencies
+                    sh '''
+                        # Update package lists
+                        apt-get update
+
+                        # Upgrade installed packages
+                        apt-get upgrade -y
+
+                        # Optional: Upgrade distribution packages
+                        apt-get dist-upgrade -y
+                    '''
+                }
+            }
+        }
+
         stage('Snyk Security Scan') {
             steps {
                 withCredentials([string(credentialsId: 'snyk-token', variable: 'SNYK_TOKEN')]) {
                     script {
-                        // Scan Python app image
+                        // Ensure .snyk file is present in the workspace
+                        sh 'cp /path/to/your/project/.snyk .'
+
+                        // Authenticate with Snyk and run container security tests
                         sh '''
                             snyk auth $SNYK_TOKEN
-                            snyk container test $DOCKER_REGISTRY/$PYTHON_IMG_NAME
-                        '''
-                        // Scan Nginx image
-                        sh '''
-                            snyk auth $SNYK_TOKEN
-                            snyk container test $DOCKER_REGISTRY/$NGINX_IMG_NAME
+                            snyk container test $DOCKER_REGISTRY/$PYTHON_IMG_NAME --file=.snyk
+                            snyk container test $DOCKER_REGISTRY/$NGINX_IMG_NAME --file=.snyk
                         '''
                     }
                 }
             }
-        }
-
-        stage('Deploy Containers') {
-            steps {
-                script {
-                    def dockerComposeContent = """
-                    version: '3.8'
-
-                    services:
-                      python_app:
-                        image: $DOCKER_REGISTRY/$PYTHON_IMG_NAME
-                        ports:
-                          - "8000:8000"
-
-                      nginx:
-                        image: $DOCKER_REGISTRY/$NGINX_IMG_NAME
-                        ports:
-                          - "80:80"
-                    """
-                    writeFile file: 'docker-compose.yaml', text: dockerComposeContent
-                    sh 'docker-compose down'
-                    sh 'docker-compose up -d'
-                }
-            }
-        }
-    }
-
-    post {
-        always {
-            cleanWs()
         }
     }
 }
