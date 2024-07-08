@@ -93,6 +93,31 @@ pipeline {
                 }
             }
         }
+	stage('Snyk Scan Python Image') {
+            steps {
+                withCredentials([string(credentialsId: 'snyk-token', variable: 'SNYK_TOKEN')]) {
+                    withEnv(["SNYK_TOKEN=${SNYK_TOKEN}"]) {
+                        sh '''
+                            snyk auth $SNYK_TOKEN
+                            snyk container test exaclly/$PYTHON_IMG_NAME --file=Dockerfile.python --policy-path=.snyk
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('Snyk Scan Nginx Image') {
+            steps {
+                withCredentials([string(credentialsId: 'snyk-token', variable: 'SNYK_TOKEN')]) {
+                    withEnv(["SNYK_TOKEN=${SNYK_TOKEN}"]) {
+                        sh '''
+                            snyk auth $SNYK_TOKEN
+                            snyk container test exaclly/$NGINX_IMG_NAME --file=Dockerfile.nginx --policy-path=.snyk
+                        '''
+                    }
+                }
+            }
+        }
 
         stage('Update Dependencies') {
             steps {
@@ -101,23 +126,7 @@ pipeline {
                     sh '''
                         sudo apt-get update
                     '''
-                }
-            }
-        }
-
-        stage('Snyk Security Scan') {
-            steps {
-                withCredentials([string(credentialsId: 'snyk-token', variable: 'SNYK_TOKEN')]) {
-                    script {
-                        // Ensure .snyk file is present in the workspace
-                        sh 'cp /home/etcsys/project-int/.snyk .'
-
-                        // Authenticate with Snyk and run container security tests
-                        sh '''
-                            snyk auth $SNYK_TOKEN
-                            snyk container test $DOCKER_REGISTRY/$PYTHON_IMG_NAME --file=.snyk
-                            snyk container test $DOCKER_REGISTRY/$NGINX_IMG_NAME --file=.snyk
-                        '''
+                
                     }
                 }
             }
