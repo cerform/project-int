@@ -245,7 +245,8 @@ pipeline {
                 withCredentials([string(credentialsId: 'snyk-token', variable: 'SNYK_TOKEN')]) {
                     script {
                         // Ensure .snyk file is present in the workspace
-                        sh 'cp /home/etcsys/project-int/.snyk .'
+                        sh ``` 
+			   'cp /home/etcsys/project-int/.snyk .'
 
                         // Authenticate with Snyk and run container security tests
                         sh '''
