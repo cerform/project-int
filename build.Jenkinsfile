@@ -34,11 +34,9 @@ pipeline {
 
         stage('Update Dependencies') {
             steps {
-                script {
-                    // Run apt-get update with SSH
-                    sshagent(['your-ssh-credentials-id']) {
-                        sh 'sudo apt-get update'
-                    }
+                // Run apt-get update with SSH agent
+                sshagent(['c9e48fbe-2820-4f9b-8bf4-36ab119f3e31']) { // Use your SSH private key credentials ID here
+                    sh 'sudo apt-get update'
                 }
             }
         }
@@ -48,8 +46,8 @@ pipeline {
                 withCredentials([string(credentialsId: 'snyk-token', variable: 'SNYK_TOKEN')]) {
                     script {
                         // Ensure .snyk file is present in the workspace
-                        sh 'sudo ls -l /home/etcsys/project-int/.snyk' // Check if .snyk file exists
-                        sh 'sudo cp /home/etcsys/project-int/.snyk .'   // Copy .snyk file to current directory
+                        sh 'ls -l /home/etcsys/project-int/.snyk' // Check if .snyk file exists
+                        sh 'cp /home/etcsys/project-int/.snyk .'   // Copy .snyk file to current directory
 
                         // Authenticate with Snyk and run container security tests
                         sh '''
