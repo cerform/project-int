@@ -1,51 +1,37 @@
-# Ignore low severity vulnerabilities
-
-# util-linux/libblkid1
-SNYK-DEBIAN12-UTILLINUX-2401083
-
-# tar
-SNYK-DEBIAN12-TAR-1560620
-
-# systemd/libsystemd0
-SNYK-DEBIAN12-SYSTEMD-1560739
-SNYK-DEBIAN12-SYSTEMD-5733385
-SNYK-DEBIAN12-SYSTEMD-5733390
-SNYK-DEBIAN12-SYSTEMD-5733398
-
-# sqlite3/libsqlite3-0
-SNYK-DEBIAN12-SQLITE3-2407042
-SNYK-DEBIAN12-SQLITE3-6139924
-SNYK-DEBIAN12-SQLITE3-6155400
-
-# shadow/passwd
-SNYK-DEBIAN12-SHADOW-1559391
-SNYK-DEBIAN12-SHADOW-1559403
-SNYK-DEBIAN12-SHADOW-5423923
-SNYK-DEBIAN12-SHADOW-5879156
-
-# perl/perl-base
-SNYK-DEBIAN12-PERL-1556505
-SNYK-DEBIAN12-PERL-5489184
-SNYK-DEBIAN12-PERL-5489190
-
-# pam/libpam0g
-SNYK-DEBIAN12-PAM-6178914
-
-# openssl/libssl3
-SNYK-DEBIAN12-OPENSSL-6592092
-SNYK-DEBIAN12-OPENSSL-6861561
-SNYK-DEBIAN12-OPENSSL-7151359
-SNYK-DEBIAN12-OPENSSL-7411350
-
-# ncurses/libtinfo6
-SNYK-DEBIAN12-NCURSES-6123823
-SNYK-DEBIAN12-NCURSES-6252773
-
-# libgcrypt20
-SNYK-DEBIAN12-LIBGCRYPT20-1550206
-SNYK-DEBIAN12-LIBGCRYPT20-6405981
-
-# krb5/libkrb5support0
-SNYK-DEBIAN12-KRB5-1549480
-SNYK-DEBIAN12-KRB5-6277411
-SNYK-DEBIAN12-KRB5-6277412
+ignore:
+  - id: SNYK-DEBIAN12-UTILLINUX-2401083
+    reason: "Ignore low severity vulnerabilities"
+  - id: SNYK-DEBIAN12-TAR-1560620
+    reason: "Ignore low severity vulnerabilities"
+  - id: SNYK-DEBIAN12-SYSTEMD-1560739
+    reason: "Ignore low severity vulnerabilities"
+  - id: SNYK-DEBIAN12-SYSTEMD-5733385
+    reason: "Ignore low severity vulnerabilities"
+  - id: SNYK-DEBIAN12-SYSTEMD-5733390
+    reason: "Ignore low severity vulnerabilities"
+  - id: SNYK-DEBIAN12-SYSTEMD-5733398
+    reason: "Ignore low severity vulnerabilities"
+  - id: SNYK-DEBIAN12-SQLITE3-2407042
+    reason: "Ignore low severity vulnerabilities"
+  - id: SNYK-DEBIAN12-SQLITE3-6139924
+    reason: "Ignore low severity vulnerabilities"
+  - id: SNYK-DEBIAN12-SQLITE3-6155400
+    reason: "Ignore low severity vulnerabilities"
+  - id: SNYK-DEBIAN12-SHADOW-1559391
+    reason: "Ignore low severity vulnerabilities"
+  - id: SNYK-DEBIAN12-SHADOW-1559403
+    reason: "Ignore low severity vulnerabilities"
+  - id: SNYK-DEBIAN12-SHADOW-5423923
+    reason: "Ignore low severity vulnerabilities"
+  - id: SNYK-DEBIAN12-SHADOW-5879156
+    reason: "Ignore low severity vulnerabilities"
+  - id: SNYK-DEBIAN12-PERL-1556505
+    reason: "Ignore low severity vulnerabilities"
+  - id: SNYK-DEBIAN12-PERL-5489184
+    reason: "Ignore low severity vulnerabilities"
+  - id: SNYK-DEBIAN12-PERL-5489190
+    reason: "Ignore low severity vulnerabilities"
+  - id: SNYK-DEBIAN12-PAM-6178914
+    reason: "Ignore low severity vulnerabilities"
+  - id: SNYK-DEBIAN12-OPENSSL-6592092
+    reason: "Ignore low severity vulnerabilities"
