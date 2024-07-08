@@ -35,9 +35,7 @@ pipeline {
             steps {
                 script {
                     // Run apt-get update with sudo
-                    sh '''
-                        sudo apt-get update
-                    '''
+                    sh 'sudo apt-get update'
                 }
             }
         }
@@ -47,10 +45,9 @@ pipeline {
                 withCredentials([string(credentialsId: 'snyk-token', variable: 'SNYK_TOKEN')]) {
                     script {
                         // Ensure .snyk file is present in the workspace
-			sh '''
-			snyk auth $SNYK_TOKEN
                         sh 'sudo ls -l /home/etcsys/project-int/.snyk' // Check if .snyk file exists
                         sh 'sudo cp /home/etcsys/project-int/.snyk .'   // Copy .snyk file to current directory
+
                         // Authenticate with Snyk and run container security tests
                         sh '''
                             snyk auth $SNYK_TOKEN
