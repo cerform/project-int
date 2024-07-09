@@ -1,22 +1,14 @@
 pipeline {
-    agent {
-        docker {
-            image 'your-docker-agent-image'
-            args '--user root -v /var/run/docker.sock:/var/run/docker.sock'
-        }
-    }
+    agent any // Use 'any' agent type if not specifying a specific Jenkins node or Docker image
+
     stages {
-        stage('Checkout') {
-            steps {
-                checkout([$class: 'GitSCM',
-                          branches: [[name: '*/etcsys_test']],
-                          doGenerateSubmoduleConfigurations: false,
-                          extensions: [],
-                          submoduleCfg: [],
-                          userRemoteConfigs: [[url: 'https://github.com/cerform/project-int.git']]])
-            }
-        }
         stage('Build') {
+            agent {
+                docker {
+                    image 'your-docker-agent-image'
+                    args '--user root -v /var/run/docker.sock:/var/run/docker.sock'
+                }
+            }
             steps {
                 sh '''
                     docker build -t project-int-app:latest ./app
@@ -25,11 +17,13 @@ pipeline {
             }
         }
         stage('Test') {
+            agent any // You can use 'any' here if tests do not require specific Docker environment
             steps {
                 sh 'python -m pytest'
             }
         }
         stage('Security Scan') {
+            agent any // Again, 'any' agent type for flexibility
             steps {
                 withCredentials([string(credentialsId: 'snyk-token', variable: 'SNYK_TOKEN')]) {
                     sh 'snyk container test project-int-app:latest'
@@ -38,6 +32,7 @@ pipeline {
             }
         }
         stage('Deploy') {
+            agent any // 'any' agent type if deployment does not need a specific Docker environment
             steps {
                 sh '''
                     docker login -u <your-docker-username> -p <your-docker-password>
