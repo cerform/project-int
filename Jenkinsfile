@@ -5,7 +5,7 @@ pipeline {
         stage('Build') {
             agent {
                 docker {
-                    image 'Search_app' // Replace with your desired base Docker image
+                    image 'your-docker-agent-image' // Replace with your desired base Docker image
                     args '--user root -v /var/run/docker.sock:/var/run/docker.sock'
                 }
             }
