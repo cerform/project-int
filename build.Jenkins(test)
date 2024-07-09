@@ -15,14 +15,14 @@ pipeline {
                         // Build and push Python app image
                         sh '''
                             echo "$USERPASS" | docker login -u "$USERNAME" --password-stdin
-                            DOCKER_BUILDKIT=1 docker build -t "$PYTHON_IMG_NAME" -f Dockerfile.python .
+                            docker buildx build --platform linux/amd64 -t "$PYTHON_IMG_NAME" -f Dockerfile.python .
                             docker tag "$PYTHON_IMG_NAME" exaclly/"$PYTHON_IMG_NAME"
                             docker push exaclly/"$PYTHON_IMG_NAME"
                         '''
                         // Build and push Nginx image
                         sh '''
                             echo "$USERPASS" | docker login -u "$USERNAME" --password-stdin
-                            DOCKER_BUILDKIT=1 docker build -t "$NGINX_IMG_NAME" -f Dockerfile.nginx .
+                            docker buildx build --platform linux/amd64 -t "$NGINX_IMG_NAME" -f Dockerfile.nginx .
                             docker tag "$NGINX_IMG_NAME" exaclly/"$NGINX_IMG_NAME"
                             docker push exaclly/"$NGINX_IMG_NAME"
                         '''
