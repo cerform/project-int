@@ -2,6 +2,8 @@ pipeline {
     agent any
 
     environment {
+        DOCKER_CLI_EXPERIMENTAL = 'enabled' // Required for Docker Buildx
+        PATH = "${tool 'docker'}:${env.PATH}" // Ensure Docker binaries are in PATH
         PYTHON_IMG_NAME = "python-app:${BUILD_NUMBER}"
         NGINX_IMG_NAME = "nginx-static:${BUILD_NUMBER}"
         DOCKER_REGISTRY = "etcsys"
@@ -12,21 +14,7 @@ pipeline {
         stage('List Builders') {
             steps {
                 script {
-                    def buildersOutput = sh(script: 'docker buildx ls', returnStdout: true).trim()
-                    echo "Available Builders:"
-                    echo "${buildersOutput}"
-
-                    // Optionally switch to 'mybuilder' if it's not active
-                    if (buildersOutput.contains('* mybuilder')) {
-                        echo "Using existing 'mybuilder'..."
-                    } else {
-                        echo "Creating and using 'mybuilder'..."
-                        sh '''
-                            docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
-                            docker buildx create --name mybuilder
-                            docker buildx use mybuilder
-                        '''
-                    }
+                    sh 'docker buildx ls'
                 }
             }
         }
@@ -38,14 +26,14 @@ pipeline {
                         // Build and push Python app image
                         sh '''
                             echo $USERPASS | docker login -u $USERNAME --password-stdin
-                            docker build -t $PYTHON_IMG_NAME -f Dockerfile.python .
+                            docker build -t $PYTHON_IMG_NAME -f /home/etcsys/project-int/Dockerfile.python /home/etcsys/project-int
                             docker tag $PYTHON_IMG_NAME $DOCKER_REGISTRY/$PYTHON_IMG_NAME
                             docker push $DOCKER_REGISTRY/$PYTHON_IMG_NAME
                         '''
                         // Build and push Nginx image
                         sh '''
                             echo $USERPASS | docker login -u $USERNAME --password-stdin
-                            docker build -t $NGINX_IMG_NAME -f Dockerfile.nginx .
+                            docker build -t $NGINX_IMG_NAME -f /home/etcsys/project-int/Dockerfile.nginx /home/etcsys/project-int
                             docker tag $NGINX_IMG_NAME $DOCKER_REGISTRY/$NGINX_IMG_NAME
                             docker push $DOCKER_REGISTRY/$NGINX_IMG_NAME
                         '''
@@ -68,8 +56,8 @@ pipeline {
                 withCredentials([string(credentialsId: 'snyk-token', variable: 'SNYK_TOKEN')]) {
                     script {
                         // Ensure .snyk file is present in the workspace
-                        sh 'ls -l /home/etcsys/project-int/.snyk' // Check if .snyk file exists
-                        sh 'cp /home/etcsys/project-int/.snyk .'   // Copy .snyk file to current directory
+                        sh 'ls -l /home/etcsys/project-int/snyk-ignore.txt' // Check if .snyk file exists
+                        sh 'cp /home/etcsys/project-int/snyk-ignore.txt .'   // Copy .snyk file to current directory
 
                         // Authenticate with Snyk and run container security tests
                         sh '''
