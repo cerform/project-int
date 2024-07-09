@@ -9,6 +9,15 @@ pipeline {
     }
 
     stages {
+        stage('Setup Docker Buildx') {
+            steps {
+                sh '''
+                    docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+                    docker buildx create --use
+                '''
+            }
+        }
+        
         stage('Build Docker Images') {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'USERNAME', passwordVariable: 'USERPASS')]) {
