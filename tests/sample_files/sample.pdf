@@ -1,0 +1,10 @@
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+
+def create_sample_pdf(filename):
+    c = canvas.Canvas(filename, pagesize=letter)
+    c.drawString(100, 750, "Hello, this is a sample PDF document.")
+    c.save()
+
+if __name__ == '__main__':
+    create_sample_pdf('sample.pdf')

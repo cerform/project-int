@@ -1,0 +1,10 @@
+from docx import Document
+
+def create_sample_docx(filename):
+    doc = Document()
+    doc.add_paragraph('This is a sample Word document.')
+    doc.add_paragraph('It contains some text for testing purposes.')
+    doc.save(filename)
+
+if __name__ == '__main__':
+    create_sample_docx('sample.docx')
