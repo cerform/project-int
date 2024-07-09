@@ -1,7 +1,11 @@
-Flask==2.2.2
-Werkzeug==2.2.2
+Flask==2.2.5
+Werkzeug==3.0.3
 mammoth==1.4.2
 python-pptx==0.6.21
-PyMuPDF==1.20.2
-Jinja2==3.1.2
+PyMuPDF==1.24.5
+Jinja2==3.1.4
 nbformat==5.5.0
+Pylint==3.2.5
+pytest==8.2.2
+unittest2
+setuptools==70.2.0
