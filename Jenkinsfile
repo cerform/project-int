@@ -19,6 +19,7 @@ pipeline {
             steps {
                 // Install Python virtual environment
                 sh '''
+                #!/bin/bash
                 python3 -m venv venv
                 source venv/bin/activate
                 pip install -r requirements.txt
@@ -30,6 +31,7 @@ pipeline {
             steps {
                 // Example of running Python tests
                 sh '''
+                #!/bin/bash
                 source venv/bin/activate
                 python -m unittest discover -s tests
                 '''
