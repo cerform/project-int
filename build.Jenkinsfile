@@ -13,7 +13,7 @@ pipeline {
         stage('List Builders') {
             steps {
                 script {
-                
+                    sh 'docker buildx ls'
                 }
             }
         }
