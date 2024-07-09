@@ -2,7 +2,6 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_CLI_EXPERIMENTAL = 'enabled' // Required for Docker Buildx
         PATH = "${tool 'docker'}:${env.PATH}" // Ensure Docker binaries are in PATH
         PYTHON_IMG_NAME = "python-app:${BUILD_NUMBER}"
         NGINX_IMG_NAME = "nginx-static:${BUILD_NUMBER}"
@@ -14,9 +13,7 @@ pipeline {
         stage('List Builders') {
             steps {
                 script {
-                    sh 'docker buildx ls'
-                    sh 'docker version'
-                    sh 'docker info'
+                    sh 'docker buildx ls' // This line can be removed
                 }
             }
         }
@@ -28,18 +25,12 @@ pipeline {
                         // Build and push Python app image
                         sh '''
                             echo $USERPASS | docker login -u $USERNAME --password-stdin
-                            docker buildx build --platform linux/amd64,linux/arm64 -t $DOCKER_REGISTRY/$PYTHON_IMG_NAME -f /home/etcsys/project-int/Dockerfile.python /home/etcsys/project-int
-                            docker buildx build --platform linux/amd64,linux/arm64 -t $DOCKER_REGISTRY/$NGINX_IMG_NAME -f /home/etcsys/project-int/Dockerfile.nginx /home/etcsys/project-int
+                            docker build --platform linux/amd64 -t $DOCKER_REGISTRY/$PYTHON_IMG_NAME -f Dockerfile.python .
                         '''
                         // Tag and push images
                         sh '''
-                            docker buildx imagetools create $DOCKER_REGISTRY/$PYTHON_IMG_NAME --tag $DOCKER_REGISTRY/$PYTHON_IMG_NAME
-                            docker buildx imagetools create $DOCKER_REGISTRY/$NGINX_IMG_NAME --tag $DOCKER_REGISTRY/$NGINX_IMG_NAME
-                        '''
-                        // Push images
-                        sh '''
-                            docker buildx imagetools push $DOCKER_REGISTRY/$PYTHON_IMG_NAME
-                            docker buildx imagetools push $DOCKER_REGISTRY/$NGINX_IMG_NAME
+                            docker tag $DOCKER_REGISTRY/$PYTHON_IMG_NAME $DOCKER_REGISTRY/$PYTHON_IMG_NAME:latest
+                            docker push $DOCKER_REGISTRY/$PYTHON_IMG_NAME
                         '''
                     }
                 }
@@ -67,7 +58,6 @@ pipeline {
                         sh '''
                             snyk auth $SNYK_TOKEN
                             snyk container test $DOCKER_REGISTRY/$PYTHON_IMG_NAME --file=.snyk
-                            snyk container test $DOCKER_REGISTRY/$NGINX_IMG_NAME --file=.snyk
                         '''
                     }
                 }
