@@ -26,16 +26,18 @@ pipeline {
                         // Build and push Python app image
                         sh '''
                             echo $USERPASS | docker login -u $USERNAME --password-stdin
-                            docker build -t $PYTHON_IMG_NAME -f /home/etcsys/project-int/Dockerfile.python /home/etcsys/project-int
-                            docker tag $PYTHON_IMG_NAME $DOCKER_REGISTRY/$PYTHON_IMG_NAME
-                            docker push $DOCKER_REGISTRY/$PYTHON_IMG_NAME
+                            docker buildx build --platform linux/amd64,linux/arm64 -t $DOCKER_REGISTRY/$PYTHON_IMG_NAME -f /home/etcsys/project-int/Dockerfile.python /home/etcsys/project-int
+                            docker buildx build --platform linux/amd64,linux/arm64 -t $DOCKER_REGISTRY/$NGINX_IMG_NAME -f /home/etcsys/project-int/Dockerfile.nginx /home/etcsys/project-int
                         '''
-                        // Build and push Nginx image
+                        // Tag and push images
                         sh '''
-                            echo $USERPASS | docker login -u $USERNAME --password-stdin
-                            docker build -t $NGINX_IMG_NAME -f /home/etcsys/project-int/Dockerfile.nginx /home/etcsys/project-int
-                            docker tag $NGINX_IMG_NAME $DOCKER_REGISTRY/$NGINX_IMG_NAME
-                            docker push $DOCKER_REGISTRY/$NGINX_IMG_NAME
+                            docker buildx imagetools create $DOCKER_REGISTRY/$PYTHON_IMG_NAME --tag $DOCKER_REGISTRY/$PYTHON_IMG_NAME
+                            docker buildx imagetools create $DOCKER_REGISTRY/$NGINX_IMG_NAME --tag $DOCKER_REGISTRY/$NGINX_IMG_NAME
+                        '''
+                        // Push images
+                        sh '''
+                            docker buildx imagetools push $DOCKER_REGISTRY/$PYTHON_IMG_NAME
+                            docker buildx imagetools push $DOCKER_REGISTRY/$NGINX_IMG_NAME
                         '''
                     }
                 }
