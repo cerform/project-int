@@ -5,11 +5,8 @@ pipeline {
         DOCKER_REGISTRY = 'docker.io/etcsys'
         DOCKER_CREDENTIALS_ID = 'docker-hub-credentials'
         IMAGE_NAME = 'project-int'
-    }
-
-    tools {
-        // Define the Python installation
-        python 'Python3'
+        PYTHON_HOME = tool name: 'Python3', type: 'hudson.plugins.python.PythonInstallation'
+        PATH = "${PYTHON_HOME}/bin:${env.PATH}"
     }
 
     stages {
@@ -21,14 +18,14 @@ pipeline {
 
         stage('Install Dependencies') {
             steps {
-                sh 'python -m venv venv'  // Ensure Python3 is used here
-                sh 'pip install -r requirements.txt'
+                sh 'python -m venv venv'
+                sh 'source venv/bin/activate && pip install -r requirements.txt'
             }
         }
 
         stage('Run Tests') {
             steps {
-                sh 'pytest --junitxml=report.xml'
+                sh 'source venv/bin/activate && pytest --junitxml=report.xml'
                 junit 'report.xml'
             }
         }
