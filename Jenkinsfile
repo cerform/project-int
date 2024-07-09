@@ -1,57 +1,38 @@
 pipeline {
     agent any
     
-    environment {
-        DOCKER_REGISTRY = 'docker.io/etcsys'
-        DOCKER_CREDENTIALS_ID = 'docker-hub-credentials'
-        IMAGE_NAME = 'project-int'
-    }
-
     stages {
-        stage('Checkout') {
+        stage('Setup') {
             steps {
-                // Checkout SCM steps
-                checkout scm
+                // Checkout the repository
+                git 'https://github.com/cerform/project-int.git'
+                
+                // Install dependencies (if needed)
+                sh 'python -m pip install --upgrade pip setuptools wheel'
+                sh 'python -m pip install -r requirements.txt'
             }
         }
         
-        stage('Install Dependencies') {
+        stage('Activate Virtual Environment') {
             steps {
-                // Install Python virtual environment
-                sh 'bash -c "python3 -m venv venv && source venv/bin/activate && pip install -r requirements.txt"'
+                // Replace '/path/to/your/venv' with the actual path to your venv directory
+                sh 'source /path/to/your/venv/bin/activate'
             }
         }
         
         stage('Run Tests') {
             steps {
-                // Example of running Python tests
-                sh 'bash -c "source venv/bin/activate && python -m unittest discover -s tests"'
+                // Run tests using pytest
+                sh 'pytest'
             }
         }
         
-        stage('Build Docker Image') {
-            steps {
-                // Build Docker image steps
-                script {
-                    docker.build("${DOCKER_REGISTRY}/${IMAGE_NAME}:latest")
-                }
-            }
-        }
-        
-        stage('Push Docker Image') {
-            steps {
-                // Push Docker image steps
-                script {
-                    docker.withRegistry('https://registry.hub.docker.com', "${DOCKER_CREDENTIALS_ID}") {
-                        docker.image("${DOCKER_REGISTRY}/${IMAGE_NAME}:latest").push()
-                    }
-                }
-            }
-        }
+        // Add more stages for other tasks like building Docker images, pushing to repositories, etc.
     }
-
+    
     post {
         always {
+            // Clean up workspace
             cleanWs()
         }
     }
