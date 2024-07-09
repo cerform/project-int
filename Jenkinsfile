@@ -7,6 +7,11 @@ pipeline {
         IMAGE_NAME = 'project-int'
     }
 
+    tools {
+        // Define the Python installation
+        python 'Python3'
+    }
+
     stages {
         stage('Clone Repository') {
             steps {
@@ -16,37 +21,21 @@ pipeline {
 
         stage('Install Dependencies') {
             steps {
-                script {
-                    // Create and activate a virtual environment
-                    sh 'python -m venv venv'
-                    sh 'source venv/bin/activate'
-
-                    // Install project dependencies
-                    sh 'pip install -r requirements.txt'
-                }
+                sh 'python -m venv venv'  // Ensure Python3 is used here
+                sh 'pip install -r requirements.txt'
             }
         }
 
         stage('Run Tests') {
             steps {
-                script {
-                    // Ensure virtual environment is activated
-                    sh 'source venv/bin/activate'
-
-                    // Run tests using pytest
-                    sh 'pytest --junitxml=report.xml'
-                    junit 'report.xml'
-                }
+                sh 'pytest --junitxml=report.xml'
+                junit 'report.xml'
             }
         }
 
         stage('Build Docker Image') {
             steps {
                 script {
-                    // Ensure virtual environment is activated
-                    sh 'source venv/bin/activate'
-
-                    // Build Docker image
                     def imageTag = "latest"
                     sh "docker build -t ${DOCKER_REGISTRY}/${IMAGE_NAME}:${imageTag} ."
                 }
@@ -56,10 +45,6 @@ pipeline {
         stage('Push Docker Image') {
             steps {
                 script {
-                    // Ensure virtual environment is activated
-                    sh 'source venv/bin/activate'
-
-                    // Push Docker image to registry
                     docker.withRegistry('https://index.docker.io/v1/', DOCKER_CREDENTIALS_ID) {
                         def imageTag = "latest"
                         sh "docker push ${DOCKER_REGISTRY}/${IMAGE_NAME}:${imageTag}"
@@ -71,7 +56,6 @@ pipeline {
 
     post {
         always {
-            // Clean up workspace after pipeline execution
             cleanWs()
         }
     }
