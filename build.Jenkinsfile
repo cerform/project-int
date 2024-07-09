@@ -9,17 +9,28 @@ pipeline {
     }
 
     stages {
-        stage('Setup Docker Buildx') {
+        stage('List Builders') {
             steps {
-                sh '''
-                    docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
-                    docker buildx create --name mybuilder
-                    docker buildx use mybuilder
+                script {
+                    def buildersOutput = sh(script: 'docker buildx ls', returnStdout: true).trim()
+                    echo "Available Builders:"
+                    echo "${buildersOutput}"
 
-                '''
+                    // Optionally switch to 'mybuilder' if it's not active
+                    if (buildersOutput.contains('* mybuilder')) {
+                        echo "Using existing 'mybuilder'..."
+                    } else {
+                        echo "Creating and using 'mybuilder'..."
+                        sh '''
+                            docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+                            docker buildx create --name mybuilder
+                            docker buildx use mybuilder
+                        '''
+                    }
+                }
             }
         }
-        
+
         stage('Build Docker Images') {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'USERNAME', passwordVariable: 'USERPASS')]) {
