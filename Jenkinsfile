@@ -16,15 +16,15 @@ pipeline {
                         sh '''
                             echo "$USERPASS" | docker login -u "$USERNAME" --password-stdin
                             docker build -t "$PYTHON_IMG_NAME" -f Dockerfile.python .
-                            docker tag "$PYTHON_IMG_NAME" exaclly/"$PYTHON_IMG_NAME"
-                            docker push exaclly/"$PYTHON_IMG_NAME"
+                            docker tag "$PYTHON_IMG_NAME" etcsys/"$PYTHON_IMG_NAME"
+                            docker push etcsys/"$PYTHON_IMG_NAME"
                         '''
                         // Build and push Nginx image
                         sh '''
                             echo "$USERPASS" | docker login -u "$USERNAME" --password-stdin
                             docker build -t "$NGINX_IMG_NAME" -f Dockerfile.nginx .
-                            docker tag "$NGINX_IMG_NAME" exaclly/"$NGINX_IMG_NAME"
-                            docker push exaclly/"$NGINX_IMG_NAME"
+                            docker tag "$NGINX_IMG_NAME" etcsys/"$NGINX_IMG_NAME"
+                            docker push etcsys/"$NGINX_IMG_NAME"
                         '''
                     }
                 }
@@ -76,7 +76,7 @@ pipeline {
                     withEnv(["SNYK_TOKEN=${SNYK_TOKEN}"]) {
                         sh '''
                             snyk auth $SNYK_TOKEN
-                            snyk container test exaclly/$PYTHON_IMG_NAME --file=Dockerfile.python --policy-path=.snyk
+                            snyk container test etcsys/$PYTHON_IMG_NAME --file=Dockerfile.python --policy-path=.snyk
                         '''
                     }
                 }
@@ -89,7 +89,7 @@ pipeline {
                     withEnv(["SNYK_TOKEN=${SNYK_TOKEN}"]) {
                         sh '''
                             snyk auth $SNYK_TOKEN
-                            snyk container test exaclly/$NGINX_IMG_NAME --file=Dockerfile.nginx --policy-path=.snyk
+                            snyk container test etcsys/$NGINX_IMG_NAME --file=Dockerfile.nginx --policy-path=.snyk
                         '''
                     }
                 }
@@ -104,12 +104,12 @@ pipeline {
 
                     services:
                       python_app:
-                        image: exaclly/$PYTHON_IMG_NAME
+                        image: etcsys/$PYTHON_IMG_NAME
                         ports:
                           - "8000:8000"
 
                       nginx:
-                        image: exaclly/$NGINX_IMG_NAME
+                        image: etcsys/$NGINX_IMG_NAME
                         ports:
                           - "8445:8444"
                     """
@@ -130,8 +130,8 @@ pipeline {
                 // Remove the built Docker images from the disk
                 try {
                     sh '''
-                        echo "Removing Docker image: exaclly/$PYTHON_IMG_NAME"
-                        docker rmi exaclly/$PYTHON_IMG_NAME || echo "Image exaclly/$PYTHON_IMG_NAME already removed or not found."
+                        echo "Removing Docker image: etcsys/$PYTHON_IMG_NAME"
+                        docker rmi etcsys/$PYTHON_IMG_NAME || echo "Image etcsys/$PYTHON_IMG_NAME already removed or not found."
                     '''
                 } catch (Exception e) {
                     echo "Error during Docker image removal: ${e.getMessage()}"
@@ -139,8 +139,8 @@ pipeline {
 
                 try {
                     sh '''
-                        echo "Removing Docker image: exaclly/$NGINX_IMG_NAME"
-                        docker rmi exaclly/$NGINX_IMG_NAME || echo "Image exaclly/$NGINX_IMG_NAME already removed or not found."
+                        echo "Removing Docker image: etcsys/$NGINX_IMG_NAME"
+                        docker rmi etcsys/$NGINX_IMG_NAME || echo "Image etcsys/$NGINX_IMG_NAME already removed or not found."
                     '''
                 } catch (Exception e) {
                     echo "Error during Docker image removal: ${e.getMessage()}"
