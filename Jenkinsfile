@@ -1,32 +1,32 @@
 pipeline {
     agent any
- 
+
     stages {
+        stage('Checkout') {
+            steps {
+                // Checkout the specific branch
+                git branch: 'etcsys_test', url: 'https://github.com/cerform/project-int.git'
+            }
+        }
+
         stage('Setup') {
             steps {
-                // Checkout the repository
-                git 'https://github.com/cerform/project-int.git'
-                
-                // Create and activate virtual environment
-                sh 'python -m venv venv' // Create virtual environment
-                sh '. venv/bin/activate' // Activate virtual environment
-                
-                // Install dependencies
+                // Install dependencies or setup environment
                 sh 'python -m pip install --upgrade pip setuptools wheel'
                 sh 'python -m pip install -r requirements.txt'
             }
         }
-        
+
         stage('Run Tests') {
             steps {
-                // Run tests using pytest
+                // Run tests using pytest or your preferred testing framework
                 sh 'pytest'
             }
         }
-        
-        // Add more stages for other tasks like building Docker images, pushing to repositories, etc.
+
+        // Add more stages for additional tasks like building Docker images, pushing to repositories, etc.
     }
-    
+
     post {
         always {
             // Clean up workspace
