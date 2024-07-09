@@ -1,36 +1,157 @@
 pipeline {
     agent any
 
+    environment {
+        PYTHON_IMG_NAME = "python-app:${BUILD_NUMBER}"
+        NGINX_IMG_NAME = "nginx-static:${BUILD_NUMBER}"
+        SNYK_TOKEN = credentials('snyk-token') // Ensure you have a Jenkins credential with ID 'snyk-token'
+    }
+
     stages {
-        stage('Checkout') {
+        stage('Build Docker Images') {
             steps {
-                // Checkout the specific branch
-                git branch: 'etcsys_test', url: 'https://github.com/cerform/project-int.git'
+                withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'USERNAME', passwordVariable: 'USERPASS')]) {
+                    script {
+                        // Build and push Python app image
+                        sh '''
+                            echo "$USERPASS" | docker login -u "$USERNAME" --password-stdin
+                            docker build -t "$PYTHON_IMG_NAME" -f Dockerfile.python .
+                            docker tag "$PYTHON_IMG_NAME" exaclly/"$PYTHON_IMG_NAME"
+                            docker push exaclly/"$PYTHON_IMG_NAME"
+                        '''
+                        // Build and push Nginx image
+                        sh '''
+                            echo "$USERPASS" | docker login -u "$USERNAME" --password-stdin
+                            docker build -t "$NGINX_IMG_NAME" -f Dockerfile.nginx .
+                            docker tag "$NGINX_IMG_NAME" exaclly/"$NGINX_IMG_NAME"
+                            docker push exaclly/"$NGINX_IMG_NAME"
+                        '''
+                    }
+                }
             }
         }
 
-        stage('Setup') {
+        stage('Install Dependencies') {
             steps {
-                // Install dependencies or setup environment
-                sh 'python -m pip install --upgrade pip setuptools wheel'
-                sh 'python -m pip install -r requirements.txt'
+                sh 'pip3 install pytest unittest2 pylint'
             }
         }
 
-        stage('Run Tests') {
-            steps {
-                // Run tests using pytest or your preferred testing framework
-                sh 'pytest'
+        stage('Parallel Linting and Unittest') {
+            parallel {
+                stage('Static Code Linting') {
+                    steps {
+                        sh 'python3 -m pylint -f parseable --reports=no *.py > pylint.log'
+                    }
+                    post {
+                        always {
+                            sh 'cat pylint.log'
+                            recordIssues (
+                                enabledForFailure: true,
+                                aggregatingResults: true,
+                                tools: [pyLint(name: 'Pylint', pattern: '**/pylint.log')]
+                            )
+                        }
+                    }
+                }
+                stage('Unittest') {
+                    steps {
+                        script {
+                            // Run unit tests
+                            sh 'python3 -m pytest --junitxml results.xml tests/test_demo.py'
+                        }
+                    }
+                    post {
+                        always {
+                            junit allowEmptyResults: true, testResults: 'results.xml'
+                        }
+                    }
+                }
             }
         }
 
-        // Add more stages for additional tasks like building Docker images, pushing to repositories, etc.
+        stage('Snyk Scan Python Image') {
+            steps {
+                withCredentials([string(credentialsId: 'snyk-token', variable: 'SNYK_TOKEN')]) {
+                    withEnv(["SNYK_TOKEN=${SNYK_TOKEN}"]) {
+                        sh '''
+                            snyk auth $SNYK_TOKEN
+                            snyk container test exaclly/$PYTHON_IMG_NAME --file=Dockerfile.python --policy-path=.snyk
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('Snyk Scan Nginx Image') {
+            steps {
+                withCredentials([string(credentialsId: 'snyk-token', variable: 'SNYK_TOKEN')]) {
+                    withEnv(["SNYK_TOKEN=${SNYK_TOKEN}"]) {
+                        sh '''
+                            snyk auth $SNYK_TOKEN
+                            snyk container test exaclly/$NGINX_IMG_NAME --file=Dockerfile.nginx --policy-path=.snyk
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('Deploy Containers') {
+            steps {
+                script {
+                    def dockerComposeContent = """
+                    version: '3.8'
+
+                    services:
+                      python_app:
+                        image: exaclly/$PYTHON_IMG_NAME
+                        ports:
+                          - "8000:8000"
+
+                      nginx:
+                        image: exaclly/$NGINX_IMG_NAME
+                        ports:
+                          - "8445:8444"
+                    """
+                    writeFile file: 'docker-compose.yaml', text: dockerComposeContent
+                    sh 'docker-compose down'
+                    sh 'docker-compose up -d'
+                }
+            }
+        }
     }
 
     post {
         always {
-            // Clean up workspace
-            cleanWs()
+            script {
+                // Log the start of the cleanup process
+                echo 'Starting cleanup process...'
+
+                // Remove the built Docker images from the disk
+                try {
+                    sh '''
+                        echo "Removing Docker image: exaclly/$PYTHON_IMG_NAME"
+                        docker rmi exaclly/$PYTHON_IMG_NAME || echo "Image exaclly/$PYTHON_IMG_NAME already removed or not found."
+                    '''
+                } catch (Exception e) {
+                    echo "Error during Docker image removal: ${e.getMessage()}"
+                }
+
+                try {
+                    sh '''
+                        echo "Removing Docker image: exaclly/$NGINX_IMG_NAME"
+                        docker rmi exaclly/$NGINX_IMG_NAME || echo "Image exaclly/$NGINX_IMG_NAME already removed or not found."
+                    '''
+                } catch (Exception e) {
+                    echo "Error during Docker image removal: ${e.getMessage()}"
+                }
+
+                // Clean the workspace
+                cleanWs()
+
+                // Log the end of the cleanup process
+                echo 'Cleanup process completed.'
+            }
         }
     }
 }
