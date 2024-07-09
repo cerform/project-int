@@ -1,50 +1,54 @@
 pipeline {
     agent any
-
+    
     environment {
         DOCKER_REGISTRY = 'docker.io/etcsys'
         DOCKER_CREDENTIALS_ID = 'docker-hub-credentials'
         IMAGE_NAME = 'project-int'
-        PYTHON_HOME = tool name: 'Python3', type: 'hudson.plugins.python.PythonInstallation'
-        PATH = "${PYTHON_HOME}/bin:${env.PATH}"
+    }
+
+    tools {
+        // Define Python installation
+        python 'Python3'
     }
 
     stages {
-        stage('Clone Repository') {
+        stage('Checkout') {
             steps {
-                git branch: 'etcsys_test', url: 'https://github.com/cerform/project-int.git'
+                // Checkout SCM steps
+                checkout scm
             }
         }
-
+        
         stage('Install Dependencies') {
             steps {
-                sh 'python -m venv venv'
-                sh 'source venv/bin/activate && pip install -r requirements.txt'
+                // Use Python tool to run commands
+                sh "python -m venv venv"
             }
         }
-
+        
         stage('Run Tests') {
             steps {
-                sh 'source venv/bin/activate && pytest --junitxml=report.xml'
-                junit 'report.xml'
+                // Example of running Python tests
+                sh "python -m unittest discover -s tests"
             }
         }
-
+        
         stage('Build Docker Image') {
             steps {
+                // Build Docker image steps
                 script {
-                    def imageTag = "latest"
-                    sh "docker build -t ${DOCKER_REGISTRY}/${IMAGE_NAME}:${imageTag} ."
+                    docker.build("${DOCKER_REGISTRY}/${IMAGE_NAME}:latest")
                 }
             }
         }
-
+        
         stage('Push Docker Image') {
             steps {
+                // Push Docker image steps
                 script {
-                    docker.withRegistry('https://index.docker.io/v1/', DOCKER_CREDENTIALS_ID) {
-                        def imageTag = "latest"
-                        sh "docker push ${DOCKER_REGISTRY}/${IMAGE_NAME}:${imageTag}"
+                    docker.withRegistry('https://registry.hub.docker.com', "${DOCKER_CREDENTIALS_ID}") {
+                        dockerImage.push("${DOCKER_REGISTRY}/${IMAGE_NAME}:latest")
                     }
                 }
             }
@@ -53,7 +57,12 @@ pipeline {
 
     post {
         always {
-            cleanWs()
+            script {
+                node {
+                    // Clean up workspace
+                    cleanWs()
+                }
+            }
         }
     }
 }
