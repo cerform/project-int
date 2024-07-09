@@ -7,11 +7,6 @@ pipeline {
         IMAGE_NAME = 'project-int'
     }
 
-    tools {
-        // Define Python installation
-        python 'Python3'
-    }
-
     stages {
         stage('Checkout') {
             steps {
@@ -22,15 +17,22 @@ pipeline {
         
         stage('Install Dependencies') {
             steps {
-                // Use Python tool to run commands
-                sh "python -m venv venv"
+                // Install Python virtual environment
+                sh '''
+                python3 -m venv venv
+                source venv/bin/activate
+                pip install -r requirements.txt
+                '''
             }
         }
         
         stage('Run Tests') {
             steps {
                 // Example of running Python tests
-                sh "python -m unittest discover -s tests"
+                sh '''
+                source venv/bin/activate
+                python -m unittest discover -s tests
+                '''
             }
         }
         
@@ -48,7 +50,7 @@ pipeline {
                 // Push Docker image steps
                 script {
                     docker.withRegistry('https://registry.hub.docker.com', "${DOCKER_CREDENTIALS_ID}") {
-                        dockerImage.push("${DOCKER_REGISTRY}/${IMAGE_NAME}:latest")
+                        docker.image("${DOCKER_REGISTRY}/${IMAGE_NAME}:latest").push()
                     }
                 }
             }
@@ -57,12 +59,7 @@ pipeline {
 
     post {
         always {
-            script {
-                node {
-                    // Clean up workspace
-                    cleanWs()
-                }
-            }
+            cleanWs()
         }
     }
 }
