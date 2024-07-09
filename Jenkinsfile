@@ -10,20 +10,23 @@ pipeline {
     stages {
         stage('Clone Repository') {
             steps {
-                git 'https://github.com/cerform/project-int.git'
+                git branch: 'etcsys_test', url: 'https://github.com/cerform/project-int.git'
             }
         }
+
         stage('Install Dependencies') {
             steps {
                 sh 'pip install -r requirements.txt'
             }
         }
+
         stage('Run Tests') {
             steps {
                 sh 'pytest --junitxml=report.xml'
                 junit 'report.xml'
             }
         }
+
         stage('Build Docker Image') {
             steps {
                 script {
@@ -32,6 +35,7 @@ pipeline {
                 }
             }
         }
+
         stage('Push Docker Image') {
             steps {
                 script {
@@ -43,6 +47,7 @@ pipeline {
             }
         }
     }
+
     post {
         always {
             cleanWs()
