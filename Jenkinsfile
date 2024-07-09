@@ -1,22 +1,19 @@
 pipeline {
     agent any
-    
+ 
     stages {
         stage('Setup') {
             steps {
                 // Checkout the repository
                 git 'https://github.com/cerform/project-int.git'
                 
-                // Install dependencies (if needed)
+                // Create and activate virtual environment
+                sh 'python -m venv venv' // Create virtual environment
+                sh '. venv/bin/activate' // Activate virtual environment
+                
+                // Install dependencies
                 sh 'python -m pip install --upgrade pip setuptools wheel'
                 sh 'python -m pip install -r requirements.txt'
-            }
-        }
-        
-        stage('Activate Virtual Environment') {
-            steps {
-                // Replace '/path/to/your/venv' with the actual path to your venv directory
-                sh 'source /path/to/your/venv/bin/activate'
             }
         }
         
