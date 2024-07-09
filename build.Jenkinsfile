@@ -15,6 +15,8 @@ pipeline {
             steps {
                 script {
                     sh 'docker buildx ls'
+                    sh 'docker version'
+                    sh 'docker info'
                 }
             }
         }
