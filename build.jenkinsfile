@@ -13,25 +13,23 @@ pipeline {
                 withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'USERNAME', passwordVariable: 'USERPASS')]) {
                     script {
                         // Docker login
-                        def dockerLogin = sh(script: "docker login -u $USERNAME --password-stdin", returnStdout: true).trim()
-                        dockerLogin.with {
-                            if (it == 'Login Succeeded') {
-                                // Build and push Python app image
-                                sh '''
-                                    docker build -t "$PYTHON_IMG_NAME" -f Dockerfile.python .
-                                    docker tag "$PYTHON_IMG_NAME" etcsys/"$PYTHON_IMG_NAME"
-                                    docker push etcsys/"$PYTHON_IMG_NAME"
-                                '''
-                                // Build and push Nginx image similarly
-                                sh '''
-                                    docker build -t "$NGINX_IMG_NAME" -f Dockerfile.nginx .
-                                    docker tag "$NGINX_IMG_NAME" etcsys/"$NGINX_IMG_NAME"
-                                    docker push etcsys/"$NGINX_IMG_NAME"
-                                '''
-                            } else {
-                                error "Docker login failed: $it"
-                            }
-                        }
+                        sh """
+                            echo $USERPASS | docker login -u $USERNAME --password-stdin
+                        """
+
+                        // Build and push Python app image
+                        sh """
+                            docker build -t "$PYTHON_IMG_NAME" -f Dockerfile.python .
+                            docker tag "$PYTHON_IMG_NAME" etcsys/"$PYTHON_IMG_NAME"
+                            docker push etcsys/"$PYTHON_IMG_NAME"
+                        """
+                        
+                        // Build and push Nginx image
+                        sh """
+                            docker build -t "$NGINX_IMG_NAME" -f Dockerfile.nginx .
+                            docker tag "$NGINX_IMG_NAME" etcsys/"$NGINX_IMG_NAME"
+                            docker push etcsys/"$NGINX_IMG_NAME"
+                        """
                     }
                 }
             }
