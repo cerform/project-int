@@ -1,13 +1,11 @@
 import os
 import mimetypes
 import shutil
-import io
-from flask import Flask, render_template, request, redirect, url_for, flash, send_file, jsonify
+from flask import Flask, render_template, request, redirect, url_for, flash, send_file
 from werkzeug.utils import secure_filename
 import mammoth
 from pptx import Presentation
 import fitz  # PyMuPDF
-from jinja2 import Environment, FileSystemLoader, select_autoescape, Undefined
 import nbformat
 from jupyter_client import KernelManager
 
@@ -15,7 +13,6 @@ app = Flask(__name__, static_url_path='/static', static_folder='static')
 app.config['UPLOAD_FOLDER'] = os.path.abspath('templates/uploads')
 app.secret_key = 'supersecretkey'
 file_index = {}
-execution_environment = {}
 
 # Allowed file extensions
 app.config['ALLOWED_EXTENSIONS'] = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'docx', 'pptx', 'ipynb'}
@@ -105,12 +102,6 @@ def search_files(query):
     return results
 
 
-def get_slides_content():
-    # This function is for demonstration; you may need to adapt it as per your application's logic
-    slides_content = []
-    return slides_content
-
-
 @app.route('/')
 def index():
     categories = [d for root, dirs, files in os.walk(app.config['UPLOAD_FOLDER']) for d in dirs]
@@ -131,10 +122,6 @@ def search():
     query = request.form['query']
     search_results = search_files(query)
     return render_template('search_results.html', query=query, results=search_results)
-
-
-def get_mime_type(filename):
-    return mimetypes.guess_type(filename)[0]
 
 
 @app.route('/pptx_preview')
