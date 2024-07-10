@@ -44,6 +44,18 @@ pipeline {
         always {
             script {
                 // Cleanup steps go here
+                echo 'Starting cleanup process...'
+                
+                // Remove Python app image
+                sh "docker rmi etcsys/$PYTHON_IMG_NAME || echo 'Image etcsys/$PYTHON_IMG_NAME already removed or not found.'"
+                
+                // Remove Nginx image
+                sh "docker rmi etcsys/$NGINX_IMG_NAME || echo 'Image etcsys/$NGINX_IMG_NAME already removed or not found.'"
+                
+                // Clean the workspace
+                cleanWs()
+                
+                echo 'Cleanup process completed.'
             }
         }
     }
