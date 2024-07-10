@@ -1,0 +1,121 @@
+pipeline {
+    agent any
+
+    environment {
+        DOCKER_IMAGE = 'etcsys/python-app:77'
+        DOCKER_REGISTRY = 'your-docker-registry'
+        SNYK_TOKEN = credentials('snyk-token')
+    }
+
+    stages {
+        stage('Checkout SCM') {
+            steps {
+                checkout scm
+            }
+        }
+        
+        stage('Build Docker Image') {
+            when {
+                not {
+                    expression { docker.image(DOCKER_IMAGE).exists() }
+                }
+            }
+            steps {
+                script {
+                    docker.build(DOCKER_IMAGE)
+                }
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                sh 'pip install -r requirements.txt'
+            }
+        }
+
+        stage('Linting') {
+            steps {
+                script {
+                    try {
+                        docker.image(DOCKER_IMAGE).inside('-v $WORKSPACE:/app -w /app') {
+                            sh 'flake8 .'
+                        }
+                    } catch (Exception e) {
+                        currentBuild.result = 'FAILURE'
+                        throw e
+                    }
+                }
+            }
+        }
+
+        stage('Pylint') {
+            steps {
+                script {
+                    try {
+                        docker.image(DOCKER_IMAGE).inside('-v $WORKSPACE:/app -w /app') {
+                            sh 'pylint app.py'
+                        }
+                    } catch (Exception e) {
+                        currentBuild.result = 'FAILURE'
+                        throw e
+                    }
+                }
+            }
+        }
+
+        stage('Unit Tests') {
+            steps {
+                script {
+                    try {
+                        docker.image(DOCKER_IMAGE).inside('-v $WORKSPACE:/app -w /app') {
+                            sh 'pytest'
+                        }
+                    } catch (Exception e) {
+                        currentBuild.result = 'FAILURE'
+                        throw e
+                    }
+                }
+            }
+        }
+
+        stage('Snyk Security Scans') {
+            steps {
+                script {
+                    try {
+                        docker.image(DOCKER_IMAGE).inside('-v $WORKSPACE:/app -w /app') {
+                            sh 'snyk test'
+                        }
+                    } catch (Exception e) {
+                        currentBuild.result = 'FAILURE'
+                        throw e
+                    }
+                }
+            }
+        }
+
+        stage('Deploy Containers') {
+            steps {
+                // Deployment steps here
+            }
+        }
+    }
+
+    post {
+        always {
+            script {
+                try {
+                    sh "docker rmi ${DOCKER_IMAGE}"
+                } catch (Exception e) {
+                    echo "Image ${DOCKER_IMAGE} already removed or not found."
+                }
+                try {
+                    sh "docker rmi etcsys/nginx-static:77"
+                } catch (Exception e) {
+                    echo "Image etcsys/nginx-static:77 already removed or not found."
+                }
+            }
+            cleanWs()
+            echo 'Cleanup process completed.'
+        }
+    }
+}
