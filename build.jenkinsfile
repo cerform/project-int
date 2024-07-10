@@ -5,16 +5,28 @@ pipeline {
         PYTHON_IMG_NAME = "python-app:${BUILD_NUMBER}"
         NGINX_IMG_NAME = "nginx-static:${BUILD_NUMBER}"
         SNYK_TOKEN = credentials('snyk-token') // Ensure you have a Jenkins credential with ID 'snyk-token'
-        DOCKERHUB_CRED = credentials('dockerhub')
     }
 
     stages {
         stage('Build Docker Images') {
             steps {
-                script {
-                    dockerLogin()
-                    buildAndPushDockerImage("Dockerfile.python", PYTHON_IMG_NAME)
-                    buildAndPushDockerImage("Dockerfile.nginx", NGINX_IMG_NAME)
+                withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'USERNAME', passwordVariable: 'USERPASS')]) {
+                    script {
+                        // Build and push Python app image
+                        sh '''
+                            echo "$USERPASS" | docker login -u "$USERNAME" --password-stdin
+                            docker build -t "$PYTHON_IMG_NAME" -f Dockerfile.python .
+                            docker tag "$PYTHON_IMG_NAME" exaclly/"$PYTHON_IMG_NAME"
+                            docker push exaclly/"$PYTHON_IMG_NAME"
+                        '''
+                        // Build and push Nginx image
+                        sh '''
+                            echo "$USERPASS" | docker login -u "$USERNAME" --password-stdin
+                            docker build -t "$NGINX_IMG_NAME" -f Dockerfile.nginx .
+                            docker tag "$NGINX_IMG_NAME" exaclly/"$NGINX_IMG_NAME"
+                            docker push exaclly/"$NGINX_IMG_NAME"
+                        '''
+                    }
                 }
             }
         }
@@ -60,20 +72,50 @@ pipeline {
 
         stage('Snyk Scan Python Image') {
             steps {
-                snykScan(PYTHON_IMG_NAME, "Dockerfile.python")
+                withCredentials([string(credentialsId: 'snyk-token', variable: 'SNYK_TOKEN')]) {
+                    withEnv(["SNYK_TOKEN=${SNYK_TOKEN}"]) {
+                        sh '''
+                            snyk auth $SNYK_TOKEN
+                            snyk container test exaclly/$PYTHON_IMG_NAME --file=Dockerfile.python --policy-path=.snyk
+                        '''
+                    }
+                }
             }
         }
 
         stage('Snyk Scan Nginx Image') {
             steps {
-                snykScan(NGINX_IMG_NAME, "Dockerfile.nginx")
+                withCredentials([string(credentialsId: 'snyk-token', variable: 'SNYK_TOKEN')]) {
+                    withEnv(["SNYK_TOKEN=${SNYK_TOKEN}"]) {
+                        sh '''
+                            snyk auth $SNYK_TOKEN
+                            snyk container test exaclly/$NGINX_IMG_NAME --file=Dockerfile.nginx --policy-path=.snyk
+                        '''
+                    }
+                }
             }
         }
 
         stage('Deploy Containers') {
             steps {
                 script {
-                    deployContainers()
+                    def dockerComposeContent = """
+                    version: '3.8'
+
+                    services:
+                      python_app:
+                        image: exaclly/$PYTHON_IMG_NAME
+                        ports:
+                          - "8000:8000"
+
+                      nginx:
+                        image: exaclly/$NGINX_IMG_NAME
+                        ports:
+                          - "8445:8444"
+                    """
+                    writeFile file: 'docker-compose.yaml', text: dockerComposeContent
+                    sh 'docker-compose down'
+                    sh 'docker-compose up -d'
                 }
             }
         }
@@ -82,77 +124,34 @@ pipeline {
     post {
         always {
             script {
-                cleanup()
+                // Log the start of the cleanup process
+                echo 'Starting cleanup process...'
+
+                // Remove the built Docker images from the disk
+                try {
+                    sh '''
+                        echo "Removing Docker image: exaclly/$PYTHON_IMG_NAME"
+                        docker rmi exaclly/$PYTHON_IMG_NAME || echo "Image exaclly/$PYTHON_IMG_NAME already removed or not found."
+                    '''
+                } catch (Exception e) {
+                    echo "Error during Docker image removal: ${e.getMessage()}"
+                }
+
+                try {
+                    sh '''
+                        echo "Removing Docker image: exaclly/$NGINX_IMG_NAME"
+                        docker rmi exaclly/$NGINX_IMG_NAME || echo "Image exaclly/$NGINX_IMG_NAME already removed or not found."
+                    '''
+                } catch (Exception e) {
+                    echo "Error during Docker image removal: ${e.getMessage()}"
+                }
+
+                // Clean the workspace
+                cleanWs()
+
+                // Log the end of the cleanup process
+                echo 'Cleanup process completed.'
             }
         }
-    }
-}
-
-// Function to handle Docker login
-def dockerLogin() {
-    withCredentials([usernamePassword(credentialsId: DOCKERHUB_CRED, usernameVariable: 'USERNAME', passwordVariable: 'USERPASS')]) {
-        sh "echo \"$USERPASS\" | docker login -u \"$USERNAME\" --password-stdin"
-    }
-}
-
-// Function to build and push Docker images
-def buildAndPushDockerImage(dockerfile, imageName) {
-    sh """
-        docker build -t \"$imageName\" -f $dockerfile .
-        docker tag \"$imageName\" etcsys/\"$imageName\"
-        docker push etcsys/\"$imageName\"
-    """
-}
-
-// Function to run Snyk scan
-def snykScan(imageName, dockerfile) {
-    withCredentials([string(credentialsId: 'snyk-token', variable: 'SNYK_TOKEN')]) {
-        withEnv(["SNYK_TOKEN=${SNYK_TOKEN}"]) {
-            sh "snyk auth $SNYK_TOKEN && snyk container test etcsys/$imageName --file=$dockerfile --policy-path=.snyk"
-        }
-    }
-}
-
-// Function to deploy Docker containers using docker-compose
-def deployContainers() {
-    def dockerComposeContent = """
-        version: '3.8'
-
-        services:
-          python_app:
-            image: etcsys/$PYTHON_IMG_NAME
-            ports:
-              - "8000:8000"
-
-          nginx:
-            image: etcsys/$NGINX_IMG_NAME
-            ports:
-              - "8445:8444"
-    """
-    writeFile file: 'docker-compose.yaml', text: dockerComposeContent
-    sh 'docker-compose down'
-    sh 'docker-compose up -d'
-}
-
-// Function to perform cleanup
-def cleanup() {
-    echo 'Starting cleanup process...'
-    
-    // Remove Docker images
-    removeDockerImage(PYTHON_IMG_NAME)
-    removeDockerImage(NGINX_IMG_NAME)
-    
-    // Clean workspace
-    cleanWs()
-    
-    echo 'Cleanup process completed.'
-}
-
-// Function to remove Docker image
-def removeDockerImage(imageName) {
-    try {
-        sh "docker rmi etcsys/$imageName || echo \"Image etcsys/$imageName already removed or not found.\""
-    } catch (Exception e) {
-        echo "Error during Docker image removal: ${e.getMessage()}"
     }
 }
