@@ -4,7 +4,7 @@ pipeline {
     environment {
         PYTHON_IMG_NAME = "python-app:${BUILD_NUMBER}"
         NGINX_IMG_NAME = "nginx-static:${BUILD_NUMBER}"
-        SNYK_TOKEN = credentials('snyk-token') // Ensure you have a Jenkins credential with ID 'snyk-token'
+        SNYK_TOKEN = credentials('snyk-token')
     }
 
     stages {
@@ -35,7 +35,60 @@ pipeline {
             }
         }
 
-        // Other stages (Install Dependencies, Linting, Unit Tests, Snyk Scans, Deploy Containers) go here
+        stage('Install Dependencies') {
+            steps {
+                script {
+                    // Install dependencies
+                    sh """
+                        docker run --rm -v \$PWD:/app -w /app etcsys/${env.PYTHON_IMG_NAME} pip install -r requirements.txt
+                    """
+                }
+            }
+        }
+
+        stage('Linting') {
+            steps {
+                script {
+                    // Run linting
+                    sh """
+                        docker run --rm -v \$PWD:/app -w /app etcsys/${env.PYTHON_IMG_NAME} flake8 .
+                    """
+                }
+            }
+        }
+
+        stage('Unit Tests') {
+            steps {
+                script {
+                    // Run unit tests
+                    sh """
+                        docker run --rm -v \$PWD:/app -w /app etcsys/${env.PYTHON_IMG_NAME} pytest tests
+                    """
+                }
+            }
+        }
+
+        stage('Snyk Security Scans') {
+            steps {
+                script {
+                    // Run Snyk scans
+                    sh """
+                        docker run --rm -v \$PWD:/app -w /app snyk/snyk:docker test --file=Dockerfile.python --docker etcsys/${env.PYTHON_IMG_NAME} --org=my-org --project-name=${env.PYTHON_IMG_NAME} --json-file-output=snyk_report.json --sarif-file-output=snyk_report.sarif --fail-on=all
+                    """
+                }
+            }
+        }
+
+        stage('Deploy Containers') {
+            steps {
+                script {
+                    // Deploy containers using Docker Compose
+                    sh """
+                        docker-compose up -d
+                    """
+                }
+            }
+        }
     }
 
     post {
