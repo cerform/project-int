@@ -1,14 +1,12 @@
 import os
 import mimetypes
-import shutil
 import logging
-from flask import Flask, render_template, request, redirect, url_for, flash, send_file, abort
+from flask import Flask, render_template, request, redirect, url_for, flash, send_file
 from werkzeug.utils import secure_filename
 import mammoth
 from pptx import Presentation
 import fitz  # PyMuPDF
 import nbformat
-from jupyter_client import KernelManager
 
 # Configure Flask application
 app = Flask(__name__, static_url_path='/static', static_folder='static')
@@ -194,59 +192,6 @@ def preview_ipynb(file_path):
         return render_template('preview_ipynb.html', notebook=notebook)
     else:
         return "File not found", 404
-
-@app.route('/upload', methods=['POST'])
-def upload():
-    """Handle file upload."""
-    if 'file' not in request.files:
-        flash('No file part')
-        return redirect(request.url)
-
-    file = request.files['file']
-
-    if file.filename == '':
-        flash('No selected file')
-        return redirect(request.url)
-
-    if file and allowed_file(file.filename):
-        category = request.form['category']
-        category_path = os.path.join(app.config['UPLOAD_FOLDER'], secure_filename(category))
-
-        if not os.path.exists(category_path):
-            os.makedirs(category_path)
-
-        file_path = os.path.join(category_path, secure_filename(file.filename))
-        file.save(file_path)
-
-        if file.filename.endswith('.pptx'):
-            images_dir = os.path.join('static', 'images')
-            slides_content = extract_text_and_images_from_pptx(file_path, images_dir)
-            save_slides_by_category(slides_content, category_path)
-
-        index_files(app.config['UPLOAD_FOLDER'])
-        flash('File successfully uploaded')
-        return redirect(url_for('index'))
-    else:
-        flash('File type not allowed')
-        return redirect(request.url)
-
-def save_slides_by_category(slides_content, category_path):
-    """Save slides and associated files by category."""
-    for slide in slides_content:
-        slide_index = slide['slide_index']
-        content = slide['content']
-        slide_images = slide['images']
-
-        slide_folder_path = os.path.join(category_path, f'slide_{slide_index}')
-        create_directory(slide_folder_path)
-
-        # Save text content
-        with open(os.path.join(slide_folder_path, 'content.txt'), 'w', encoding='utf-8') as f:
-            f.write(content)
-
-        # Save images
-        for idx, img in enumerate(slide_images):
-            img.save(os.path.join(slide_folder_path, f'image_{idx}.jpg'))
 
 def extract_text_and_images_from_pptx(file_path, images_dir):
     """Extract text and images from a .pptx file."""
