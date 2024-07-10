@@ -35,7 +35,35 @@ pipeline {
             }
         }
 
-        // Other stages (Install Dependencies, Linting, Unit Tests, Snyk Scans, Deploy Containers) go here
+        stage('Install Dependencies') {
+            steps {
+                sh 'pip install -r requirements.txt'
+            }
+        }
+
+        stage('Linting') {
+            steps {
+                sh 'pylint **/*.py'
+            }
+        }
+
+        stage('Unit Tests') {
+            steps {
+                sh 'pytest'
+            }
+        }
+
+        stage('Snyk Scans') {
+            steps {
+                sh 'snyk test'
+            }
+        }
+
+        stage('Deploy Containers') {
+            steps {
+                sh 'docker-compose up -d'
+            }
+        }
     }
 
     post {
