@@ -49,9 +49,20 @@ pipeline {
         stage('Linting') {
             steps {
                 script {
-                    // Run linting
+                    // Run linting with flake8
                     sh """
                         docker run --rm -v \$PWD:/app -w /app etcsys/${env.PYTHON_IMG_NAME} flake8 .
+                    """
+                }
+            }
+        }
+
+        stage('Pylint') {
+            steps {
+                script {
+                    // Run pylint
+                    sh """
+                        docker run --rm -v \$PWD:/app -w /app etcsys/${env.PYTHON_IMG_NAME} pylint *.py
                     """
                 }
             }
