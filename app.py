@@ -5,7 +5,6 @@ from flask import Flask, render_template, request, send_file
 from pptx import Presentation
 import fitz  # PyMuPDF
 import nbformat
-# Importing necessary libraries
 
 # Configure Flask application
 app = Flask(__name__, static_url_path='/static', static_folder='static')
