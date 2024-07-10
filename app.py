@@ -5,6 +5,7 @@ from flask import Flask, render_template, request, send_file
 from pptx import Presentation
 import fitz  # PyMuPDF
 import nbformat
+# Importing necessary libraries
 
 # Configure Flask application
 app = Flask(__name__, static_url_path='/static', static_folder='static')
@@ -26,11 +27,13 @@ def allowed_file(filename):
     """Check if a file has an allowed extension."""
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
 
+
 def create_directory(directory):
     """Create a directory if it does not exist."""
     if not os.path.exists(directory):
         os.makedirs(directory)
         logging.info(f"Created directory: {directory}")
+
 
 def index_files(upload_folder):
     """Index files in the upload folder based on their type."""
@@ -58,10 +61,12 @@ def index_files(upload_folder):
                     file_index[new_relative_path] = content
                     logging.debug(f'Reindexed file: {new_relative_path}')
 
+
 def extract_text_from_txt(path):
     """Extract text from a .txt file."""
     with open(path, 'r', encoding='utf-8') as file:
         return file.read()
+
 
 def extract_text_from_pdf(path):
     """Extract text from a .pdf file."""
@@ -71,11 +76,13 @@ def extract_text_from_pdf(path):
         text.append(page.get_text())
     return "\n".join(text)
 
+
 def extract_text_from_docx(path):
     """Extract text from a .docx file."""
     with open(path, 'rb') as file:
-        result = mammoth.extract_raw_text(file)
+        result = mammoth.extract_raw_text(file)  # Assuming mammoth is properly imported
         return result.value
+
 
 def extract_text_from_pptx(path):
     """Extract text from a .pptx file."""
@@ -87,6 +94,7 @@ def extract_text_from_pptx(path):
                 text.append(shape.text)
     return "\n".join(text)
 
+
 def extract_text_from_ipynb(file_path):
     """Extract text from a .ipynb file."""
     with open(file_path, 'r', encoding='utf-8') as f:
@@ -97,6 +105,7 @@ def extract_text_from_ipynb(file_path):
                 text += ''.join(cell['source']) + '\n\n'
         return text
 
+
 def search_files(query):
     """Search indexed files for a query."""
     results = {}
@@ -105,6 +114,7 @@ def search_files(query):
             results[file_path] = content
     return results
 
+
 # Flask routes
 
 @app.route('/')
@@ -112,6 +122,7 @@ def index():
     """Render the main index page."""
     categories = [d for root, dirs, files in os.walk(app.config['UPLOAD_FOLDER']) for d in dirs]
     return render_template('index.html', categories=categories)
+
 
 @app.route('/pptx_player/<path:file_path>')
 def pptx_player(file_path):
@@ -122,6 +133,7 @@ def pptx_player(file_path):
     else:
         return "File not found", 404
 
+
 @app.route('/search', methods=['POST'])
 def search():
     """Handle search request."""
@@ -129,11 +141,13 @@ def search():
     search_results = search_files(query)
     return render_template('search_results.html', query=query, results=search_results)
 
+
 @app.route('/pptx_preview')
 def pptx_preview():
     """Render a preview page for .pptx files."""
     slides_content = get_slides_content()
     return render_template('pptx_preview.html', slides_content=slides_content)
+
 
 @app.route('/open/<path:file_path>', methods=['GET'])
 def open_file(file_path):
@@ -153,7 +167,7 @@ def open_file(file_path):
                                    slides_count=slides_count)
         elif file_extension == 'docx':
             with open(absolute_file_path, 'rb') as f:
-                content = mammoth.extract_raw_text(f).value
+                content = mammoth.extract_raw_text(f).value  # Assuming mammoth is properly imported
             return render_template('preview_docx.html', content=content)
         elif file_extension == 'ipynb':
             with open(absolute_file_path, 'r', encoding='utf-8') as f:
@@ -179,6 +193,7 @@ def open_file(file_path):
     else:
         return "File not found", 404
 
+
 @app.route('/preview_ipynb/<path:file_path>', methods=['GET'])
 def preview_ipynb(file_path):
     """Render a preview page for .ipynb files."""
@@ -190,6 +205,7 @@ def preview_ipynb(file_path):
         return render_template('preview_ipynb.html', notebook=notebook)
     else:
         return "File not found", 404
+
 
 def extract_text_and_images_from_pptx(file_path, images_dir):
     """Extract text and images from a .pptx file."""
@@ -211,13 +227,15 @@ def extract_text_and_images_from_pptx(file_path, images_dir):
 
     return slides_content
 
+
 def get_slides_content():
     """Retrieve slides content for preview."""
     slides_content = []
     for file_path, content in file_index.items():
         if file_path.endswith('.pptx'):
-            slides_content.extend(extract_text_and_images_from_pptx(file_path))
+            slides_content.extend(extract_text_and_images_from_pptx(file_path, 'static/images'))
     return slides_content
+
 
 # Error handlers
 
@@ -226,10 +244,8 @@ def page_not_found(error):
     """Handle 404 errors."""
     return render_template('error_404.html'), 404
 
+
 if __name__ == '__main__':
-    # Create necessary directories and index files
     create_directory(app.config['UPLOAD_FOLDER'])
     index_files(app.config['UPLOAD_FOLDER'])
-
-    # Run the Flask application in debug mode
     app.run(debug=True)
