@@ -1,9 +1,7 @@
 import os
 import mimetypes
 import logging
-from flask import Flask, render_template, request, redirect, url_for, flash, send_file
-from werkzeug.utils import secure_filename
-import mammoth
+from flask import Flask, render_template, request, send_file
 from pptx import Presentation
 import fitz  # PyMuPDF
 import nbformat
