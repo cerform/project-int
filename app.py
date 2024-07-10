@@ -5,6 +5,7 @@ from flask import Flask, render_template, request, send_file
 from pptx import Presentation
 import fitz  # PyMuPDF
 import nbformat
+import mammoth  # Assuming mammoth import for .docx handling
 
 # Configure Flask application
 app = Flask(__name__, static_url_path='/static', static_folder='static')
@@ -236,15 +237,5 @@ def get_slides_content():
     return slides_content
 
 
-# Error handlers
-
-@app.errorhandler(404)
-def page_not_found(error):
-    """Handle 404 errors."""
-    return render_template('error_404.html'), 404
-
-
 if __name__ == '__main__':
-    create_directory(app.config['UPLOAD_FOLDER'])
-    index_files(app.config['UPLOAD_FOLDER'])
     app.run(debug=True)
