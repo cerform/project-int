@@ -11,7 +11,7 @@ COPY requirements.txt .
 RUN pip install --upgrade pip
 RUN pip install jupyter_client
 RUN pip install --no-cache-dir -r requirements.txt
-
+RUN pip install flake8
 # Copy over the rest of the app code
 COPY . .
 
