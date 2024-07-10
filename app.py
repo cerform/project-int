@@ -1,7 +1,8 @@
 import os
 import mimetypes
 import shutil
-from flask import Flask, render_template, request, redirect, url_for, flash, send_file
+import logging
+from flask import Flask, render_template, request, redirect, url_for, flash, send_file, abort
 from werkzeug.utils import secure_filename
 import mammoth
 from pptx import Presentation
@@ -9,27 +10,34 @@ import fitz  # PyMuPDF
 import nbformat
 from jupyter_client import KernelManager
 
+# Configure Flask application
 app = Flask(__name__, static_url_path='/static', static_folder='static')
 app.config['UPLOAD_FOLDER'] = os.path.abspath('templates/uploads')
 app.secret_key = 'supersecretkey'
-file_index = {}
 
-# Allowed file extensions
+# Set allowed file extensions
 app.config['ALLOWED_EXTENSIONS'] = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'docx', 'pptx', 'ipynb'}
 
+# Initialize file index dictionary
+file_index = {}
+
+# Configure logging
+logging.basicConfig(level=logging.DEBUG)
+
+# Helper functions
 
 def allowed_file(filename):
+    """Check if a file has an allowed extension."""
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
 
-
 def create_directory(directory):
-    # Create the directory if it doesn't exist
+    """Create a directory if it does not exist."""
     if not os.path.exists(directory):
         os.makedirs(directory)
-        print(f"Created directory: {directory}")
-
+        logging.info(f"Created directory: {directory}")
 
 def index_files(upload_folder):
+    """Index files in the upload folder based on their type."""
     file_index.clear()
     for root, dirs, files in os.walk(upload_folder):
         for file in files:
@@ -48,33 +56,33 @@ def index_files(upload_folder):
             if content is not None:
                 relative_path = os.path.relpath(file_path, upload_folder)
                 file_index[relative_path] = content
-                print(f'Indexed file: {relative_path}')
+                logging.debug(f'Indexed file: {relative_path}')
                 new_relative_path = relative_path.replace(" ", "")
                 if new_relative_path != relative_path:
                     file_index[new_relative_path] = content
-                    print(f'Reindexed file: {new_relative_path}')
-
+                    logging.debug(f'Reindexed file: {new_relative_path}')
 
 def extract_text_from_txt(path):
+    """Extract text from a .txt file."""
     with open(path, 'r', encoding='utf-8') as file:
         return file.read()
 
-
 def extract_text_from_pdf(path):
+    """Extract text from a .pdf file."""
     doc = fitz.open(path)
     text = []
     for page in doc:
         text.append(page.get_text())
     return "\n".join(text)
 
-
 def extract_text_from_docx(path):
+    """Extract text from a .docx file."""
     with open(path, 'rb') as file:
         result = mammoth.extract_raw_text(file)
         return result.value
 
-
 def extract_text_from_pptx(path):
+    """Extract text from a .pptx file."""
     prs = Presentation(path)
     text = []
     for slide in prs.slides:
@@ -83,8 +91,8 @@ def extract_text_from_pptx(path):
                 text.append(shape.text)
     return "\n".join(text)
 
-
 def extract_text_from_ipynb(file_path):
+    """Extract text from a .ipynb file."""
     with open(file_path, 'r', encoding='utf-8') as f:
         nb = nbformat.read(f, as_version=4)
         text = ''
@@ -93,48 +101,50 @@ def extract_text_from_ipynb(file_path):
                 text += ''.join(cell['source']) + '\n\n'
         return text
 
-
 def search_files(query):
+    """Search indexed files for a query."""
     results = {}
     for file_path, content in file_index.items():
         if query.lower() in content.lower():
             results[file_path] = content
     return results
 
+# Flask routes
 
 @app.route('/')
 def index():
+    """Render the main index page."""
     categories = [d for root, dirs, files in os.walk(app.config['UPLOAD_FOLDER']) for d in dirs]
     return render_template('index.html', categories=categories)
 
-
 @app.route('/pptx_player/<path:file_path>')
 def pptx_player(file_path):
+    """Render a page to play a .pptx file."""
     absolute_file_path = os.path.abspath(os.path.join(app.config['UPLOAD_FOLDER'], file_path.replace('\\', '/')))
     if os.path.exists(absolute_file_path):
         return render_template('pptx_player.html', pptx_file=file_path)
     else:
         return "File not found", 404
 
-
 @app.route('/search', methods=['POST'])
 def search():
+    """Handle search request."""
     query = request.form['query']
     search_results = search_files(query)
     return render_template('search_results.html', query=query, results=search_results)
 
-
 @app.route('/pptx_preview')
 def pptx_preview():
+    """Render a preview page for .pptx files."""
     slides_content = get_slides_content()
     return render_template('pptx_preview.html', slides_content=slides_content)
 
-
 @app.route('/open/<path:file_path>', methods=['GET'])
 def open_file(file_path):
+    """Handle opening of various file types."""
     file_path = file_path.replace("\\", "/")
     absolute_file_path = os.path.abspath(os.path.join(app.config['UPLOAD_FOLDER'], file_path.replace('\\', '/')))
-    print(f"Opening file: {absolute_file_path}")
+    logging.debug(f"Opening file: {absolute_file_path}")
 
     if os.path.exists(absolute_file_path):
         file_extension = file_path.rsplit('.', 1)[1].lower()
@@ -142,7 +152,7 @@ def open_file(file_path):
             images_dir = os.path.join('static', 'images')
             slides_content = extract_text_and_images_from_pptx(absolute_file_path, images_dir)
             slides_count = len(slides_content)
-            print(f"Slides content: {slides_content}")
+            logging.debug(f"Slides content: {slides_content}")
             return render_template('pptx_preview.html', slides_content=slides_content,
                                    slides_count=slides_count)
         elif file_extension == 'docx':
@@ -173,21 +183,21 @@ def open_file(file_path):
     else:
         return "File not found", 404
 
-
 @app.route('/preview_ipynb/<path:file_path>', methods=['GET'])
 def preview_ipynb(file_path):
+    """Render a preview page for .ipynb files."""
     absolute_file_path = os.path.abspath(os.path.join(app.config['UPLOAD_FOLDER'], file_path))
     if os.path.exists(absolute_file_path):
         with open(absolute_file_path, 'r', encoding='utf-8') as f:
             notebook = nbformat.read(f, as_version=4)
-        print(notebook)  # Debug: Print the notebook content
+        logging.debug(f"Notebook content: {notebook}")  # Debug: Print the notebook content
         return render_template('preview_ipynb.html', notebook=notebook)
     else:
         return "File not found", 404
 
-
 @app.route('/upload', methods=['POST'])
 def upload():
+    """Handle file upload."""
     if 'file' not in request.files:
         flash('No file part')
         return redirect(request.url)
@@ -220,51 +230,63 @@ def upload():
         flash('File type not allowed')
         return redirect(request.url)
 
-
 def save_slides_by_category(slides_content, category_path):
+    """Save slides and associated files by category."""
     for slide in slides_content:
         slide_index = slide['slide_index']
         content = slide['content']
-        slide_folder = os.path.join(category_path, f"Slide_{slide_index + 1}")
+        slide_images = slide['images']
 
-        if not os.path.exists(slide_folder):
-            os.makedirs(slide_folder)
+        slide_folder_path = os.path.join(category_path, f'slide_{slide_index}')
+        create_directory(slide_folder_path)
 
-        for item in content:
-            if item['type'] == 'image':
-                image_url = item['content']
-                image_name = os.path.basename(image_url)
-                image_path = os.path.join('static', image_url)
-                dest_image_path = os.path.join(slide_folder, image_name)
+        # Save text content
+        with open(os.path.join(slide_folder_path, 'content.txt'), 'w', encoding='utf-8') as f:
+            f.write(content)
 
-                shutil.copy(image_path, dest_image_path)
+        # Save images
+        for idx, img in enumerate(slide_images):
+            img.save(os.path.join(slide_folder_path, f'image_{idx}.jpg'))
 
-        with open(os.path.join(slide_folder, f"Slide_{slide_index + 1}.txt"), 'w', encoding='utf-8') as f:
-            f.write("\n".join([item['content'] for item in content if item['type'] == 'text']))
-
-
-def extract_text_and_images_from_pptx(pptx_file, images_dir):
-    prs = Presentation(pptx_file)
+def extract_text_and_images_from_pptx(file_path, images_dir):
+    """Extract text and images from a .pptx file."""
+    prs = Presentation(file_path)
     slides_content = []
+    slide_index = 0
 
-    for slide_index, slide in enumerate(prs.slides):
-        slide_content = []
+    for slide in prs.slides:
+        slide_index += 1
+        slide_content = {'slide_index': slide_index, 'content': '', 'images': []}
         for shape in slide.shapes:
             if hasattr(shape, 'text'):
-                slide_content.append({'type': 'text', 'content': shape.text.strip()})
+                slide_content['content'] += shape.text + '\n'
             if hasattr(shape, 'image'):
-                image = shape.image
-                image_file = os.path.join(images_dir, f'slide_{slide_index + 1}_{shape.shape_id}.png')
-                image_bytes = image.blob
-                with open(image_file, 'wb') as f:
-                    f.write(image_bytes)
-                slide_content.append({'type': 'image', 'content': image_file})
-        slides_content.append({'slide_index': slide_index, 'content': slide_content})
+                img_path = os.path.join(images_dir, f'slide_{slide_index}_img_{len(slide_content["images"])}.jpg')
+                shape.image.save(img_path)
+                slide_content['images'].append(img_path)
+        slides_content.append(slide_content)
 
     return slides_content
 
+def get_slides_content():
+    """Retrieve slides content for preview."""
+    slides_content = []
+    for file_path, content in file_index.items():
+        if file_path.endswith('.pptx'):
+            slides_content.extend(extract_text_and_images_from_pptx(file_path))
+    return slides_content
+
+# Error handlers
+
+@app.errorhandler(404)
+def page_not_found(error):
+    """Handle 404 errors."""
+    return render_template('error_404.html'), 404
 
 if __name__ == '__main__':
+    # Create necessary directories and index files
     create_directory(app.config['UPLOAD_FOLDER'])
     index_files(app.config['UPLOAD_FOLDER'])
+
+    # Run the Flask application in debug mode
     app.run(debug=True)
