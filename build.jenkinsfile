@@ -40,7 +40,7 @@ pipeline {
                 script {
                     // Install dependencies
                     sh """
-                        docker run --rm -v \$PWD:/app -w /app etcsys/${env.PYTHON_IMG_NAME} pip install -r requirements.txt
+                        docker run --rm -v ${WORKSPACE}:/app -w /app etcsys/${env.PYTHON_IMG_NAME} pip install -r requirements.txt
                     """
                 }
             }
@@ -51,7 +51,7 @@ pipeline {
                 script {
                     // Run linting with flake8 and .flake8 configuration
                     sh """
-                        docker run --rm -v \$PWD:/app -w /app -v \$PWD/.flake8:/app/.flake8 etcsys/${env.PYTHON_IMG_NAME} flake8 .
+                        docker run --rm -v ${WORKSPACE}:/app -w /app -v ${WORKSPACE}/.flake8:/app/.flake8 etcsys/${env.PYTHON_IMG_NAME} flake8 .
                     """
                 }
             }
@@ -62,7 +62,7 @@ pipeline {
                 script {
                     // Run unit tests with PYTHONPATH set to include the /app directory
                     sh """
-                        docker run --rm -v \$PWD:/app -w /app -e PYTHONPATH=/app etcsys/${env.PYTHON_IMG_NAME} pytest tests
+                        docker run --rm -v ${WORKSPACE}:/app -w /app -e PYTHONPATH=/app etcsys/${env.PYTHON_IMG_NAME} pytest tests
                     """
                 }
             }
@@ -73,7 +73,7 @@ pipeline {
                 script {
                     // Run Snyk scans
                     sh """
-                        docker run --rm -v \$PWD:/app -w /app snyk/snyk:docker test --file=Dockerfile.python --docker etcsys/${env.PYTHON_IMG_NAME} --org=my-org --project-name=${env.PYTHON_IMG_NAME} --json-file-output=snyk_report.json --sarif-file-output=snyk_report.sarif --fail-on=all
+                        docker run --rm -v ${WORKSPACE}:/app -w /app snyk/snyk:docker test --file=Dockerfile.python --docker etcsys/${env.PYTHON_IMG_NAME} --org=my-org --project-name=${env.PYTHON_IMG_NAME} --json-file-output=snyk_report.json --sarif-file-output=snyk_report.sarif --fail-on=all
                     """
                 }
             }
