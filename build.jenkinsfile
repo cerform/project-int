@@ -60,9 +60,9 @@ pipeline {
         stage('Unit Tests') {
             steps {
                 script {
-                    // Run unit tests
+                    // Run unit tests with PYTHONPATH set to include the /app directory
                     sh """
-                        docker run --rm -v \$PWD:/app -w /app etcsys/${env.PYTHON_IMG_NAME} pytest tests
+                        docker run --rm -v \$PWD:/app -w /app -e PYTHONPATH=/app etcsys/${env.PYTHON_IMG_NAME} pytest tests
                     """
                 }
             }
