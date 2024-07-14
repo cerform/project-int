@@ -1,12 +1,19 @@
 pipeline {
     agent any
-
+    
+    options {
+        buildDiscarder(logRotator(numToKeepStr: '30'))
+        disableConcurrentBuilds()
+        timestamps()
+    }
+    
     environment {
+        DOCKER_REGISTRY = 'docker.io'
         PYTHON_IMG_NAME = "python-app:${BUILD_NUMBER}"
         NGINX_IMG_NAME = "nginx-static:${BUILD_NUMBER}"
         SNYK_TOKEN = credentials('snyk-token')
     }
-
+    
     stages {
         stage('Check Environment') {
             steps {
@@ -40,8 +47,8 @@ pipeline {
                 }
             }
         }
-
-        stage('Build Docker Images') {
+        
+        stage('Build and Push Docker Images') {
             steps {
                 script {
                     // Docker login
@@ -60,8 +67,8 @@ pipeline {
                     try {
                         sh """
                             docker build -t "${env.PYTHON_IMG_NAME}" -f Dockerfile.python .
-                            docker tag "${env.PYTHON_IMG_NAME}" etcsys/"${env.PYTHON_IMG_NAME}"
-                            docker push etcsys/"${env.PYTHON_IMG_NAME}"
+                            docker tag "${env.PYTHON_IMG_NAME}" ${env.DOCKER_REGISTRY}/etcsys/"${env.PYTHON_IMG_NAME}"
+                            docker push ${env.DOCKER_REGISTRY}/etcsys/"${env.PYTHON_IMG_NAME}"
                         """
                     } catch (Exception e) {
                         echo "Failed to build/push Python image: ${e.message}"
@@ -72,8 +79,8 @@ pipeline {
                     try {
                         sh """
                             docker build -t "${env.NGINX_IMG_NAME}" -f Dockerfile.nginx .
-                            docker tag "${env.NGINX_IMG_NAME}" etcsys/"${env.NGINX_IMG_NAME}"
-                            docker push etcsys/"${env.NGINX_IMG_NAME}"
+                            docker tag "${env.NGINX_IMG_NAME}" ${env.DOCKER_REGISTRY}/etcsys/"${env.NGINX_IMG_NAME}"
+                            docker push ${env.DOCKER_REGISTRY}/etcsys/"${env.NGINX_IMG_NAME}"
                         """
                     } catch (Exception e) {
                         echo "Failed to build/push Nginx image: ${e.message}"
@@ -82,7 +89,7 @@ pipeline {
                 }
             }
         }
-
+        
         stage('Install Dependencies') {
             steps {
                 script {
@@ -107,7 +114,7 @@ pipeline {
                     try {
                         // Install dependencies
                         sh """
-                            docker run --rm -v ${WORKSPACE}:/app -w /app etcsys/${env.PYTHON_IMG_NAME} pip install -r requirements.txt
+                            docker run --rm -v ${WORKSPACE}:/app -w /app ${env.DOCKER_REGISTRY}/etcsys/${env.PYTHON_IMG_NAME} pip install -r requirements.txt
                         """
                     } catch (Exception e) {
                         echo "Failed to install dependencies: ${e.message}"
@@ -116,14 +123,14 @@ pipeline {
                 }
             }
         }
-
+        
         stage('Linting') {
             steps {
                 script {
                     try {
                         // Check if flake8 is installed in the Docker image
                         sh """
-                            docker run --rm etcsys/${env.PYTHON_IMG_NAME} flake8 --version || (echo "flake8 is not installed in the Docker image." && exit 1)
+                            docker run --rm ${env.DOCKER_REGISTRY}/etcsys/${env.PYTHON_IMG_NAME} flake8 --version || (echo "flake8 is not installed in the Docker image." && exit 1)
                         """
                     } catch (Exception e) {
                         echo "flake8 is not installed: ${e.message}"
@@ -133,7 +140,7 @@ pipeline {
                     try {
                         // Run linting with flake8 and .flake8 configuration
                         sh """
-                            docker run --rm -v ${WORKSPACE}:/app -w /app -v ${WORKSPACE}/.flake8:/app/.flake8 etcsys/${env.PYTHON_IMG_NAME} flake8 .
+                            docker run --rm -v ${WORKSPACE}:/app -w /app -v ${WORKSPACE}/.flake8:/app/.flake8 ${env.DOCKER_REGISTRY}/etcsys/${env.PYTHON_IMG_NAME} flake8 .
                         """
                     } catch (Exception e) {
                         echo "Linting failed: ${e.message}"
@@ -142,14 +149,14 @@ pipeline {
                 }
             }
         }
-
+        
         stage('Unit Tests') {
             steps {
                 script {
                     try {
                         // Check if pytest is installed in the Docker image
                         sh """
-                            docker run --rm etcsys/${env.PYTHON_IMG_NAME} pytest --version || (echo "pytest is not installed in the Docker image." && exit 1)
+                            docker run --rm ${env.DOCKER_REGISTRY}/etcsys/${env.PYTHON_IMG_NAME} pytest --version || (echo "pytest is not installed in the Docker image." && exit 1)
                         """
                     } catch (Exception e) {
                         echo "pytest is not installed: ${e.message}"
@@ -159,7 +166,7 @@ pipeline {
                     try {
                         // Run unit tests with PYTHONPATH set to include the /app directory
                         sh """
-                            docker run --rm -v ${WORKSPACE}:/app -w /app -e PYTHONPATH=/app etcsys/${env.PYTHON_IMG_NAME} pytest tests
+                            docker run --rm -v ${WORKSPACE}:/app -w /app -e PYTHONPATH=/app ${env.DOCKER_REGISTRY}/etcsys/${env.PYTHON_IMG_NAME} pytest tests
                         """
                     } catch (Exception e) {
                         echo "Unit tests failed: ${e.message}"
@@ -168,7 +175,7 @@ pipeline {
                 }
             }
         }
-
+        
         stage('Snyk Security Scans') {
             steps {
                 script {
@@ -181,7 +188,7 @@ pipeline {
 
                         // Run Snyk scans
                         sh """
-                            docker run --rm -v ${WORKSPACE}:/app -w /app snyk/snyk:docker test --file=Dockerfile.python --docker etcsys/${env.PYTHON_IMG_NAME} --org=my-org --project-name=${env.PYTHON_IMG_NAME} --json-file-output=snyk_report.json --sarif-file-output=snyk_report.sarif --fail-on=all
+                            docker run --rm -v ${WORKSPACE}:/app -w /app snyk/snyk:docker test --file=Dockerfile.python --docker ${env.DOCKER_REGISTRY}/etcsys/${env.PYTHON_IMG_NAME} --org=my-org --project-name=${env.PYTHON_IMG_NAME} --json-file-output=snyk_report.json --sarif-file-output=snyk_report.sarif --fail-on=all
                         """
                     } catch (Exception e) {
                         echo "Snyk scan failed: ${e.message}"
@@ -190,7 +197,7 @@ pipeline {
                 }
             }
         }
-
+        
         stage('Deploy Containers') {
             steps {
                 script {
@@ -213,23 +220,23 @@ pipeline {
             }
         }
     }
-
+    
     post {
         always {
             script {
-                // Cleanup steps go here
+                // Cleanup steps
                 echo 'Starting cleanup process...'
 
                 // Remove Python app image
                 try {
-                    sh "docker rmi etcsys/${env.PYTHON_IMG_NAME} || echo 'Image etcsys/${env.PYTHON_IMG_NAME} already removed or not found.'"
+                    sh "docker rmi ${env.DOCKER_REGISTRY}/etcsys/${env.PYTHON_IMG_NAME} || echo 'Image ${env.DOCKER_REGISTRY}/etcsys/${env.PYTHON_IMG_NAME} already removed or not found.'"
                 } catch (Exception e) {
                     echo "Cleanup of Python image failed: ${e.message}"
                 }
 
                 // Remove Nginx image
                 try {
-                    sh "docker rmi etcsys/${env.NGINX_IMG_NAME} || echo 'Image etcsys/${env.NGINX_IMG_NAME} already removed or not found.'"
+                    sh "docker rmi ${env.DOCKER_REGISTRY}/etcsys/${env.NGINX_IMG_NAME} || echo 'Image ${env.DOCKER_REGISTRY}/etcsys/${env.NGINX_IMG_NAME} already removed or not found.'"
                 } catch (Exception e) {
                     echo "Cleanup of Nginx image failed: ${e.message}"
                 }
