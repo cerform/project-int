@@ -86,6 +86,24 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 script {
+                    // Check if workspace directory exists and has write permissions
+                    try {
+                        sh """
+                            if [ ! -d "${WORKSPACE}" ]; then
+                                echo "Workspace directory does not exist: ${WORKSPACE}"
+                                exit 1
+                            fi
+
+                            if [ ! -w "${WORKSPACE}" ]; then
+                                echo "Workspace directory is not writable: ${WORKSPACE}"
+                                exit 1
+                            fi
+                        """
+                    } catch (Exception e) {
+                        echo "Workspace directory check failed: ${e.message}"
+                        error "Stopping pipeline due to workspace directory issue"
+                    }
+
                     try {
                         // Install dependencies
                         sh """
