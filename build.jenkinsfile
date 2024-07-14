@@ -9,7 +9,7 @@ pipeline {
     
     environment {
         DOCKER_REGISTRY = 'docker.io'
-        PYTHON_IMG_NAME = "python-app:${BUILD_NUMBER}"
+        PYTHON_IMG_NAME = "python-app:lts" // Update tag to 'lts'
         NGINX_IMG_NAME = "nginx-static:${BUILD_NUMBER}"
         SNYK_TOKEN = credentials('snyk-token')
     }
@@ -66,9 +66,8 @@ pipeline {
                     // Build and push Python app image
                     try {
                         sh """
-                            docker build -t "${env.PYTHON_IMG_NAME}" -f Dockerfile.python .
-                            docker tag "${env.PYTHON_IMG_NAME}" ${env.DOCKER_REGISTRY}/etcsys/"${env.PYTHON_IMG_NAME}"
-                            docker push ${env.DOCKER_REGISTRY}/etcsys/"${env.PYTHON_IMG_NAME}"
+                            docker build -t "${env.DOCKER_REGISTRY}/etcsys/${env.PYTHON_IMG_NAME}" -f Dockerfile.python .
+                            docker push ${env.DOCKER_REGISTRY}/etcsys/${env.PYTHON_IMG_NAME}
                         """
                     } catch (Exception e) {
                         echo "Failed to build/push Python image: ${e.message}"
@@ -78,9 +77,8 @@ pipeline {
                     // Build and push Nginx image
                     try {
                         sh """
-                            docker build -t "${env.NGINX_IMG_NAME}" -f Dockerfile.nginx .
-                            docker tag "${env.NGINX_IMG_NAME}" ${env.DOCKER_REGISTRY}/etcsys/"${env.NGINX_IMG_NAME}"
-                            docker push ${env.DOCKER_REGISTRY}/etcsys/"${env.NGINX_IMG_NAME}"
+                            docker build -t "${env.DOCKER_REGISTRY}/etcsys/${env.NGINX_IMG_NAME}" -f Dockerfile.nginx .
+                            docker push ${env.DOCKER_REGISTRY}/etcsys/${env.NGINX_IMG_NAME}
                         """
                     } catch (Exception e) {
                         echo "Failed to build/push Nginx image: ${e.message}"
