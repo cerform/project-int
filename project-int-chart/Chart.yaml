@@ -1,0 +1,4 @@
+apiVersion: v2
+name: project-int-chart
+description: A Helm chart for deploying Project Int applications
+version: 0.1.0

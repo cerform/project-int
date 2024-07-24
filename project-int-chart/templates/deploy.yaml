@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: project-int
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: project-int
+  template:
+    metadata:
+      labels:
+        app: project-int
+    spec:
+      containers:
+      - name: project-int
+        image: localhost:5000/project-int:2
+        ports:
+        - containerPort: 80
+      imagePullSecrets:
+      - name: regcred
