@@ -37,3 +37,10 @@ spec:
             port: 80
           initialDelaySeconds: 30
           periodSeconds: 10
+        volumeMounts:
+        - name: nginx-config-volume
+          mountPath: /etc/nginx/conf.d
+      volumes:
+      - name: nginx-config-volume
+        configMap:
+          name: project-int-nginx-config

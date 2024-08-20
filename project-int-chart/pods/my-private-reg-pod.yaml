@@ -5,7 +5,7 @@ metadata:
 spec:
   containers:
   - name: private-reg-container
-    image: project-int
+    image: project-int:2
   imagePullSecrets:
   - name: regcred
 
