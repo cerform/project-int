@@ -1,0 +1,26 @@
+pipeline {
+    agent any  // Use 'any' or specify a specific label here if needed
+
+    environment {
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')
+    }
+
+    stages {
+        stage('Build app') {
+            agent {
+                docker {
+                    image 'etcsys/jenkins-agent:latest'
+                    args '--user root -v /var/run/docker.sock:/var/run/docker.sock'
+                }
+            }
+            steps {
+                script {
+                    docker.withRegistry('', DOCKERHUB_CREDENTIALS) {
+                        // Build and push your app image
+                        docker.build('etcsys/jenkins-agent').push()
+                    }
+                }
+            }
+        }
+    }
+}
