@@ -9,3 +9,4 @@ Pylint==3.2.5
 pytest==8.2.2
 unittest2
 setuptools==70.2.0
+jupyter-core>=5.8.0 # not directly required, pinned by Snyk to avoid a vulnerability
